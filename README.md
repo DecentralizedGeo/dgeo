@@ -59,7 +59,7 @@ The fields in the table below can be used in these parts of STAC documents:
 
 | Field Name      | Type                                          | Description |
 | --------------- | --------------------------------------------- | ----------- |
-| `dgeo:assets` | [Asset[]](#dgeoassets-resource-map) | **RECOMMENDED.** A discovery-layer map of decentralized resources associated with the Item or Collection. |
+| `dgeo:assets` | [[Assets Object](#dgeoassets-resource-map)] | **RECOMMENDED.** A discovery-layer map of decentralized resources associated with the Item or Collection. |
 | `dgeo:context` | [Context Object](#dgeocontext-user-flexibility) | A reserved bucket for implementation-specific metadata and operational context. |
 
 Implementations **SHOULD** treat `dgeo:assets` as a **derivative, discovery-oriented index** and **MUST NOT** use it as a replacement for core `assets`.
@@ -139,7 +139,7 @@ Similar to MLM’s `mlm:hyperparameters` and other open objects, this is an **op
 
 Implementations **SHOULD** follow these conventions:
 
-- Keys **SHOULD** be vendor- or organization-prefixed and use `snake_case`, for example: `myorg_pinning_policy`, `myorg_gateway_preferences`.
+- Keys **SHOULD** be vendor or organization prefixed and use `snake_case`, for example: `myorg_pinning_policy`, `myorg_gateway_preferences`.
 - Values MAY be any JSON type (object, array, string, number, boolean, null).  
 - Keys SHOULD be stable and documented within the organization, especially if they appear in public catalogs.  
 
@@ -227,7 +227,7 @@ When used alongside the MLM extension, `dgeo` can describe decentralized packagi
 - **Risk:** Exposing many CIDs directly in filters or summaries can hurt index size and query performance.
 - **Best Practices:**  
   - STAC APIs SHOULD index and summarize **structural fields** (`name`, `roles`) rather than `cid` values, similar to how MLM and SAT summarize key properties.
-  - Collections MAY provide summaries for `dgeo:assets.type`, `dgeo:assets.roles`, and `dgeo:assets.name` to support common discovery patterns (for example, “Items with IPFS archives of the full bundle”)
+  - Collections MAY provide summaries for `dgeo:assets.roles` and `dgeo:assets.name` to support common discovery patterns (for example, “Items with IPFS archives of the full bundle”)
 
 ## Contributing
 
