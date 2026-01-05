@@ -1,209 +1,163 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://stac-extensions.github.io/template/v1.0.0/schema.json#",
-  "title": "Template Extension",
-  "description": "STAC Template Extension for STAC Items and STAC Collections.",
+  "$id": "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json",
+  "title": "Decentralized Geospatial Extension",
+  "description": "Associates STAC Items and Collections with resources on the decentralized web.",
+  "type": "object",
+  "required": ["stac_extensions"],
+  "properties": {
+    "stac_extensions": {
+      "type": "array",
+      "contains": {
+        "const": "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+      }
+    }
+  },
   "oneOf": [
     {
-      "$comment": "This is the schema for STAC Items. Remove this object if this extension only applies to Collections.",
-      "allOf": [
-        {
-          "$ref": "#/definitions/stac_extensions"
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "properties",
-            "assets"
-          ],
-          "properties": {
-            "type": {
-              "const": "Feature"
-            },
-            "properties": {
-              "allOf": [
-                {
-                  "$comment": "Require fields here for Item Properties.",
-                  "required": [
-                    "template:new_field"
-                  ]
-                },
-                {
-                  "$ref": "#/definitions/fields"
-                }
-              ]
-            },
-            "assets": {
-              "$comment": "This validates the fields in Item Assets, but does not require them.",
-              "type": "object",
-              "additionalProperties": {
-                "$ref": "#/definitions/fields"
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "$comment": "This is the schema for STAC Collections.",
+      "title": "STAC Item",
       "type": "object",
-      "allOf": [
-        {
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "const": "Collection"
-            }
-          }
-        },
-        {
-          "$ref": "#/definitions/stac_extensions"
-        }
-      ],
-      "anyOf": [
-        {
-          "$comment": "This is the schema for the top-level fields in a Collection. Remove this if this extension does not define top-level fields for Collections.",
-          "allOf": [
-            {
-              "$comment": "Require fields here for Collections (top-level).",
-              "required": [
-                "template:new_field"
-              ]
-            },
-            {
-              "$ref": "#/definitions/fields"
-            }
-          ]
-        },
-        {
-          "$comment": "This validates the fields in Collection Assets, but does not require them.",
-          "required": [
-            "assets"
-          ],
-          "properties": {
-            "assets": {
-              "type": "object",
-              "not": {
-                "additionalProperties": {
-                  "not": {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/require_any_field"
-                      },
-                      {
-                        "$ref": "#/definitions/fields"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "$comment": "This is the schema for the fields in Item Asset Definitions. It doesn't require any fields.",
-          "required": [
-            "item_assets"
-          ],
-          "properties": {
-            "item_assets": {
-              "type": "object",
-              "not": {
-                "additionalProperties": {
-                  "not": {
-                    "allOf": [
-                      {
-                        "$ref": "#/definitions/require_any_field"
-                      },
-                      {
-                        "$ref": "#/definitions/fields"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "$comment": "This is the schema for the fields in Summaries. By default, only checks the existence of the properties, but not the schema of the summaries.",
-          "required": [
-            "summaries"
-          ],
-          "properties": {
-            "summaries": {
-              "$ref": "#/definitions/require_any_field"
-            }
-          }
-        }
-      ]
-    }
-  ],
-  "definitions": {
-    "stac_extensions": {
-      "type": "object",
-      "required": [
-        "stac_extensions"
-      ],
+      "required": ["type", "properties"],
       "properties": {
-        "stac_extensions": {
-          "type": "array",
-          "contains": {
-            "const": "https://stac-extensions.github.io/template/v1.0.0/schema.json"
-          }
+        "type": {
+          "const": "Feature"
+        },
+        "properties": {
+          "$ref": "#/definitions/dgeo_fields"
         }
       }
     },
-    "require_any_field": {
-      "$comment": "Please list all fields here so that we can force the existence of one of them in other parts of the schemas.",
-      "anyOf": [
-        {"required": ["template:new_field"]},
-        {"required": ["template:xyz"]},
-        {"required": ["template:another_one"]}
+    {
+      "title": "STAC Collection",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "Collection"
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/dgeo_fields"
+        }
       ]
     },
-    "fields": {
-      "$comment": "Add your new fields here. Don't require them here, do that above in the corresponding schema.",
+    {
+      "title": "STAC Catalog",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "Catalog"
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "dgeo_fields": {
       "type": "object",
       "properties": {
-        "template:new_field": {
-          "type": "string"
-        },
-        "template:xyz": {
-          "type": "object",
-          "required": [
-            "x",
-            "y",
-            "z"
-          ],
-          "properties": {
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            },
-            "z": {
-              "type": "number"
-            }
+        "dgeo:assets": {
+          "type": "array",
+          "description": "RECOMMENDED. A discovery-layer map of decentralized resources associated with the Item or Collection.",
+          "items": {
+            "$ref": "#/definitions/dgeo_asset"
           }
         },
-        "template:another_one": {
+        "dgeo:context": {
+          "type": "object",
+          "additionalProperties": true,
+          "patternProperties": {
+            "^[a-z0-9_]+$": {}
+          },
+          "description": "A reserved bucket for implementation-specific metadata and operational context. Keys SHOULD be vendor- or organization-prefixed and use snake_case (for example, myorg_pinning_policy, myorg_gateway_preferences)."
+        }
+      }
+    },
+    "dgeo_asset": {
+      "type": "object",
+      "required": ["name", "cid"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A label for the resource. When the resource represents a decentralized form of a core asset, name SHOULD match the corresponding key in the Item's assets object. For container-level resources, it MAY be a stable semantic label such as collection_root or archive."
+        },
+        "cid": {
+          "type": "string",
+          "description": "The primary content-addressed identifier (for example, IPFS CID). The target MUST be immutable; mutable pointers such as IPNS or equivalent MUST be signaled using the roles field."
+        },
+        "roles": {
           "type": "array",
           "items": {
-            "type": "number"
-          }
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Semantic roles describing the purpose of this resource (for example, ['mirror', 'data'], ['data', 'primary'], ['collection', 'archive'], ['mutable']). A small, implementation-consistent vocabulary is RECOMMENDED; additional roles MAY be added as needed."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the resource and its relationship to the core assets or collection (for example, 'IPFS CAR archive for full Level-2A product')."
+        },
+        "piece_cid": {
+          "type": "string",
+          "description": "Filecoin Piece CID (commP) used for storage verification and proof-of-replication workflows."
+        },
+        "cid_profile": {
+          "$ref": "#/definitions/cid_profile"
         }
-      },
-      "patternProperties": {
-        "^(?!template:)": {
-          "$comment": "Above, change `template` to the prefix of this extension"
+      }
+    },
+    "cid_profile": {
+      "type": "object",
+      "description": "Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding, etc.).",
+      "additionalProperties": true,
+      "properties": {
+        "cid_version": {
+          "type": "integer",
+          "enum": [0, 1],
+          "description": "CID version (for example, 0 or 1). RECOMMENDED when cid_profile is present."
+        },
+        "multibase_encoding": {
+          "type": "string",
+          "description": "Multibase encoding of the CID string (for example, base32). OPTIONAL."
+        },
+        "hash_function": {
+          "type": "string",
+          "description": "RECOMMENDED. Multihash function used when constructing the CID (e.g. sha2-256, blake3)."
+        },
+        "chunk_algorithm": {
+          "type": "string",
+          "description": "RECOMMENDED: Algorithm used to split data (for example, fixed, balanced, rabin)."
+        },
+        "chunk_size": {
+          "type": "integer",
+          "description": "Target size of chunks in bytes. OPTIONAL."
+        },
+        "dag_width": {
+          "type": "integer",
+          "description": "Maximum number of links per block. OPTIONAL."
+        },
+        "dag_layout": {
+          "type": "string",
+          "description": "RECOMMENDED. Layout algorithm (for example, balanced, trickle, hamt-directory)."
+        },
+        "directory_wrapping": {
+          "type": "boolean",
+          "description": "OPTIONAL. Option to encode content by wrapping for single files with Directories as to retain the name of a single file."
+        },
+        "hamt_directory_fanout": {
+          "type": "integer",
+          "description": "OPTIONAL. Fanout determines how many \"buckets\" a directory is split into for HAMT-based UnixFS directories (default bitwidth is 8 == 256 leaves)."
+        },
+        "hamt_directory_threshold": {
+          "type": "integer",
+          "description": "OPTIONAL. Threshold size at which a regular directory transitions to a HAMT-sharded representation."
+        },
+        "leaf_envelope": {
+          "type": "string",
+          "description": "OPTIONAL. How leaf nodes are represented, either raw or dag-pb, enabling validation of expected leaf node types."
         }
-      },
-      "additionalProperties": false
+      }
     }
   }
 }
