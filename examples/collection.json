@@ -1,73 +1,120 @@
 {
+  "type": "Collection",
   "stac_version": "1.0.0",
   "stac_extensions": [
-    "https://stac-extensions.github.io/item-assets/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/template/v1.0.0/schema.json"
+    "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
   ],
-  "type": "Collection",
-  "id": "collection",
-  "title": "A title",
-  "description": "A description",
-  "license": "Apache-2.0",
+  "id": "landsat-8-l2-collection",
+  "title": "Landsat 8 Level-2, Collection 2",
+  "description": "Landsat 8 Collection 2 Level-2 Surface Reflectance and Surface Temperature products with decentralized storage references.",
+  "keywords": [
+    "landsat",
+    "level-2",
+    "surface reflectance",
+    "USGS",
+    "NASA",
+    "IPFS"
+  ],
+  "license": "proprietary",
+  "providers": [
+    {
+      "name": "USGS",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://www.usgs.gov/landsat-missions/landsat-collection-2"
+    },
+    {
+      "name": "Decentralized Geospatial Collaborative",
+      "roles": [
+        "host"
+      ],
+      "url": "https://decentralizedgeo.org"
+    }
+  ],
   "extent": {
     "spatial": {
       "bbox": [
         [
-          172.9,
-          1.3,
-          173,
-          1.4
+          -180,
+          -90,
+          180,
+          90
         ]
       ]
     },
     "temporal": {
       "interval": [
         [
-          "2015-06-23T00:00:00Z",
+          "2013-04-11T00:00:00Z",
           null
         ]
       ]
     }
   },
-  "template:new_field": "test",
-  "template:xyz": {
-    "x": 1,
-    "y": 2,
-    "z": 3
-  },
-  "template:another_one": [
-    1,
-    2,
-    3
-  ],
-  "assets": {
-    "example": {
-      "href": "https://example.com/examples/file.xyz",
-      "template:new_field": "test"
-    }
-  },
-  "item_assets": {
-    "data": {
-      "roles": [
-        "data"
-      ],
-      "template:new_field": "test"
-    }
-  },
   "summaries": {
-    "datetime": {
-      "minimum": "2015-06-23T00:00:00Z",
-      "maximum": "2019-07-10T13:44:56Z"
+    "platform": [
+      "landsat-8"
+    ],
+    "instruments": [
+      "oli",
+      "tirs"
+    ],
+    "gsd": [
+      30
+    ]
+  },
+  "dgeo:assets": [
+    {
+      "name": "collection_root",
+      "cid": "bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u",
+      "roles": [
+        "collection",
+        "archive"
+      ],
+      "description": "IPFS directory containing indexed collection metadata and sample items",
+      "cid_profile": {
+        "cid_version": 1,
+        "dag_layout": "hamt-directory",
+        "hash_function": "murmur3-x64-64",
+        "directory_wrapping": true,
+        "hamt_directory_fanout": 256,
+        "hamt_directory_threshold": 10
+      }
     }
+  ],
+  "dgeo:context": {
+    "collection_pinning_policy": {
+      "strategy": "incremental",
+      "target_providers": [
+        "Filecoin",
+        "Storj"
+      ],
+      "min_redundancy": 5
+    },
+    "preferred_gateways": [
+      "ipfs.io",
+      "dweb.link",
+      "cloudflare-ipfs.com"
+    ]
   },
   "links": [
     {
-      "href": "https://example.com/examples/collection.json",
-      "rel": "self"
+      "rel": "self",
+      "href": "https://example.com/collections/landsat-8-l2-collection.json"
     },
     {
-      "href": "https://example.com/examples/item.json",
-      "rel": "item"
+      "rel": "root",
+      "href": "https://example.com/catalog.json"
+    },
+    {
+      "rel": "license",
+      "href": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits"
+    },
+    {
+      "rel": "item",
+      "href": "https://example.com/items/LC08_L2SP_047027_20201204_item.json"
     }
   ]
 }

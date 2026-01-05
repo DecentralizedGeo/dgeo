@@ -1,0 +1,60 @@
+{
+  "type": "Feature",
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+  ],
+  "id": "item-core-example",
+  "geometry": null,
+  "properties": {
+    "datetime": "2023-01-01T00:00:00Z",
+    "dgeo:assets": [
+      {
+        "name": "visual",
+        "cid": "bafybeihopi75436322342",
+        "roles": [
+          "data",
+          "primary"
+        ],
+        "description": "Primary CID v1 for visual asset using fixed chunking",
+        "cid_profile": {
+          "cid_version": 1,
+          "chunk_algorithm": "fixed",
+          "chunk_size": 262144,
+          "dag_layout": "balanced",
+          "hash_function": "sha2-256"
+        }
+      },
+      {
+        "name": "visual",
+        "cid": "QmSomeOldCidLegacyHash",
+        "roles": [
+          "data",
+          "alternative"
+        ],
+        "description": "Legacy CID v0 hash for backward compatibility",
+        "cid_profile": {
+          "cid_version": 0,
+          "chunk_algorithm": "fixed",
+          "chunk_size": 262144,
+          "hash_function": "sha2-256"
+        }
+      }
+    ]
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://example.com/item-core-example.json"
+    }
+  ],
+  "assets": {
+    "visual": {
+      "href": "https://example.com/visual.tif",
+      "type": "image/tiff; application=geotiff",
+      "roles": [
+        "data"
+      ]
+    }
+  }
+}

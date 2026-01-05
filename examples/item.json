@@ -1,10 +1,11 @@
 {
+  "type": "Feature",
   "stac_version": "1.0.0",
   "stac_extensions": [
-    "https://stac-extensions.github.io/template/v1.0.0/schema.json"
+    "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
   ],
-  "type": "Feature",
-  "id": "item",
+  "id": "LC08_L2SP_047027_20201204_item",
+  "collection": "landsat-8-l2-collection",
   "bbox": [
     172.9,
     1.3,
@@ -39,29 +40,104 @@
     ]
   },
   "properties": {
-    "datetime": "2020-12-11T22:38:32Z",
-    "template:new_field": "test",
-    "template:xyz": {
-      "x": 1,
-      "y": 2,
-      "z": 3
-    },
-    "template:another_one": [
-      1,
-      2,
-      3
-    ]
+    "datetime": "2020-12-04T22:38:32Z",
+    "dgeo:assets": [
+      {
+        "name": "red",
+        "cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+        "roles": [
+          "mirror",
+          "data"
+        ],
+        "description": "IPFS mirror of red band (B4) GeoTIFF",
+        "cid_profile": {
+          "cid_version": 1,
+          "chunk_algorithm": "fixed",
+          "chunk_size": 262144,
+          "dag_layout": "balanced",
+          "hash_function": "sha2-256"
+        }
+      },
+      {
+        "name": "nir",
+        "cid": "bafybeic2zycyt36xnkbvbzqbrmhb3jndcylvqywb4zfqn7i6kcsjjl62ka",
+        "roles": [
+          "mirror",
+          "data"
+        ],
+        "description": "IPFS mirror of near-infrared band (B5) GeoTIFF",
+        "cid_profile": {
+          "cid_version": 1,
+          "chunk_algorithm": "fixed",
+          "chunk_size": 262144,
+          "dag_layout": "balanced",
+          "hash_function": "sha2-256"
+        }
+      },
+      {
+        "name": "product_bundle",
+        "cid": "bafybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+        "roles": [
+          "collection",
+          "archive"
+        ],
+        "description": "CAR archive containing all Level-2 product files",
+        "piece_cid": "baga6ea4seaqao7s73y24kcutaosvacpdjgfe5pw76ooefnyqw4ynr3d2y6x2mpq",
+        "cid_profile": {
+          "cid_version": 1,
+          "dag_layout": "hamt-directory",
+          "hash_function": "sha2-256",
+          "directory_wrapping": true,
+          "hamt_directory_fanout": 256,
+          "hamt_directory_threshold": 3
+        }
+      }
+    ],
+    "dgeo:context": {
+      "landsat_pinning_policy": {
+        "min_replication": 3,
+        "preferred_gateways": [
+          "ipfs.io",
+          "dweb.link"
+        ],
+        "pin_duration_days": 365
+      }
+    }
   },
   "links": [
     {
-      "href": "https://example.com/examples/item.json",
-      "rel": "self"
+      "rel": "self",
+      "href": "https://example.com/items/LC08_L2SP_047027_20201204_item.json"
+    },
+    {
+      "rel": "collection",
+      "href": "https://example.com/collections/landsat-8-l2"
     }
   ],
   "assets": {
-    "data": {
-      "href": "https://example.com/examples/file.xyz",
-      "template:new_field": "test"
+    "red": {
+      "href": "https://landsatlook.usgs.gov/data/LC08_L2SP_047027_20201204_B4.TIF",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "title": "Red Band (B4)",
+      "roles": [
+        "data"
+      ]
+    },
+    "nir": {
+      "href": "https://landsatlook.usgs.gov/data/LC08_L2SP_047027_20201204_B5.TIF",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "title": "Near Infrared Band (B5)",
+      "roles": [
+        "data"
+      ]
+    },
+    "thumbnail": {
+      "href": "https://landsatlook.usgs.gov/data/LC08_L2SP_047027_20201204_thumb.jpg",
+      "type": "image/jpeg",
+      "title": "Thumbnail",
+      "roles": [
+        "thumbnail"
+      ]
     }
   }
 }
