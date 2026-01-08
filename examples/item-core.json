@@ -8,38 +8,9 @@
   "geometry": null,
   "properties": {
     "datetime": "2023-01-01T00:00:00Z",
-    "dgeo:assets": [
-      {
-        "name": "visual",
-        "cid": "bafybeihopi75436322342",
-        "roles": [
-          "data",
-          "primary"
-        ],
-        "description": "Primary CID v1 for visual asset using fixed chunking",
-        "cid_profile": {
-          "cid_version": 1,
-          "chunk_algorithm": "fixed",
-          "chunk_size": 262144,
-          "dag_layout": "balanced",
-          "hash_function": "sha2-256"
-        }
-      },
-      {
-        "name": "visual",
-        "cid": "QmSomeOldCidLegacyHash",
-        "roles": [
-          "data",
-          "alternative"
-        ],
-        "description": "Legacy CID v0 hash for backward compatibility",
-        "cid_profile": {
-          "cid_version": 0,
-          "chunk_algorithm": "fixed",
-          "chunk_size": 262144,
-          "hash_function": "sha2-256"
-        }
-      }
+    "dgeo:cids": [
+      "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
     ]
   },
   "links": [
@@ -50,11 +21,33 @@
   ],
   "assets": {
     "visual": {
-      "href": "https://example.com/visual.tif",
+      "href": "https://gateway.pinata.cloud/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
       "type": "image/tiff; application=geotiff",
-      "roles": [
-        "data"
-      ]
+      "title": "Visual Asset (Primary)",
+      "roles": ["data", "primary"],
+      "description": "Primary CID v1 for visual asset using fixed chunking",
+      "dgeo:cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "dgeo:cid_profile": {
+        "cid_version": 1,
+        "chunk_algorithm": "fixed",
+        "chunk_size": 262144,
+        "dag_layout": "balanced",
+        "hash_function": "sha2-256"
+      }
+    },
+    "visual-legacy": {
+      "href": "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+      "type": "image/tiff; application=geotiff",
+      "title": "Visual Asset (Legacy CIDv0)",
+      "roles": ["data", "alternative"],
+      "description": "Legacy CID v0 hash for backward compatibility",
+      "dgeo:cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+      "dgeo:cid_profile": {
+        "cid_version": 0,
+        "chunk_algorithm": "fixed",
+        "chunk_size": 262144,
+        "hash_function": "sha2-256"
+      }
     }
   }
 }

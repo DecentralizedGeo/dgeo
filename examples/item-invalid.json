@@ -1,19 +1,107 @@
 {
-  "type": "Feature",
-  "stac_version": "1.0.0",
-  "stac_extensions": [
-    "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
-  ],
-  "id": "item-invalid-example",
-  "geometry": null,
-  "properties": {
-    "datetime": "2023-01-01T00:00:00Z",
-    "dgeo:assets": [
-      {
-        "name": "missing-cid-is-illegal"
+  "_comment": "This file contains INVALID examples that should FAIL validation against dgeo v1.2 schema",
+  "examples": [
+    {
+      "name": "missing_required_cids",
+      "description": "INVALID: dgeo:cids is REQUIRED when extension is declared",
+      "item": {
+        "type": "Feature",
+        "stac_version": "1.0.0",
+        "stac_extensions": [
+          "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+        ],
+        "id": "item-missing-cids",
+        "geometry": null,
+        "properties": {
+          "datetime": "2023-01-01T00:00:00Z"
+        },
+        "links": [],
+        "assets": {}
       }
-    ]
-  },
-  "links": [],
-  "assets": {}
+    },
+    {
+      "name": "invalid_cid_format",
+      "description": "INVALID: CID does not match regex pattern",
+      "item": {
+        "type": "Feature",
+        "stac_version": "1.0.0",
+        "stac_extensions": [
+          "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+        ],
+        "id": "item-invalid-cid-format",
+        "geometry": null,
+        "properties": {
+          "datetime": "2023-01-01T00:00:00Z",
+          "dgeo:cids": ["not-a-valid-cid-format"]
+        },
+        "links": [],
+        "assets": {}
+      }
+    },
+    {
+      "name": "empty_cids_array",
+      "description": "INVALID: dgeo:cids array must have at least 1 item (minItems: 1)",
+      "item": {
+        "type": "Feature",
+        "stac_version": "1.0.0",
+        "stac_extensions": [
+          "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+        ],
+        "id": "item-empty-cids",
+        "geometry": null,
+        "properties": {
+          "datetime": "2023-01-01T00:00:00Z",
+          "dgeo:cids": []
+        },
+        "links": [],
+        "assets": {}
+      }
+    },
+    {
+      "name": "invalid_piece_cid_format",
+      "description": "INVALID: Piece CID does not match Filecoin commP pattern",
+      "item": {
+        "type": "Feature",
+        "stac_version": "1.0.0",
+        "stac_extensions": [
+          "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+        ],
+        "id": "item-invalid-piece-cid",
+        "geometry": null,
+        "properties": {
+          "datetime": "2023-01-01T00:00:00Z",
+          "dgeo:cids": [
+            "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+          ],
+          "dgeo:piece_cids": [
+            "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+          ]
+        },
+        "links": [],
+        "assets": {}
+      }
+    },
+    {
+      "name": "duplicate_cids",
+      "description": "INVALID: dgeo:cids array must have unique items",
+      "item": {
+        "type": "Feature",
+        "stac_version": "1.0.0",
+        "stac_extensions": [
+          "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+        ],
+        "id": "item-duplicate-cids",
+        "geometry": null,
+        "properties": {
+          "datetime": "2023-01-01T00:00:00Z",
+          "dgeo:cids": [
+            "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+            "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+          ]
+        },
+        "links": [],
+        "assets": {}
+      }
+    }
+  ]
 }
