@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json",
   "title": "Decentralized Geospatial Extension",
-  "description": "Associates STAC Items and Collections with resources on the decentralized web.",
+  "description": "Associates STAC Items and Collections with decentralized web resources. This extension enables queryable CID-based discovery while providing technical DAG metadata at the asset level.",
   "type": "object",
   "required": ["stac_extensions"],
   "properties": {
@@ -17,13 +17,19 @@
     {
       "title": "STAC Item",
       "type": "object",
-      "required": ["type", "properties"],
+      "required": ["type", "properties", "assets"],
       "properties": {
         "type": {
           "const": "Feature"
         },
         "properties": {
           "$ref": "#/definitions/dgeo_fields"
+        },
+        "assets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/dgeo_asset_fields"
+          }
         }
       }
     },
@@ -34,6 +40,12 @@
       "properties": {
         "type": {
           "const": "Collection"
+        },
+        "assets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/dgeo_asset_fields"
+          }
         }
       },
       "allOf": [
@@ -56,106 +68,88 @@
   "definitions": {
     "dgeo_fields": {
       "type": "object",
+      "required": ["dgeo:cids"],
       "properties": {
-        "dgeo:assets": {
+        "dgeo:cids": {
           "type": "array",
-          "description": "RECOMMENDED. A discovery-layer map of decentralized resources associated with the Item or Collection.",
+          "description": "REQUIRED. Array of IPFS Content Identifiers (CIDs) associated with this Item or Collection. Each CID MUST be immutable; mutable pointers such as IPNS MUST NOT be included. This field is queryable via pgstac and STAC API CQL2 filters.",
           "items": {
-            "$ref": "#/definitions/dgeo_asset"
-          }
+            "type": "string",
+            "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,})$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
-        "dgeo:context": {
+        "dgeo:piece_cids": {
+          "type": "array",
+          "description": "OPTIONAL. Array of Filecoin Piece CIDs (commP) used for storage verification and proof-of-replication workflows. This field is queryable via pgstac and STAC API CQL2 filters.",
+          "items": {
+            "type": "string",
+            "pattern": "^baga6ea[a-z2-7]{52,}$"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "dgeo_asset_fields": {
+      "type": "object",
+      "properties": {
+        "dgeo:cid": {
+          "type": "string",
+          "description": "OPTIONAL. The IPFS CID that this asset represents. When present, this CID MUST also appear in the Item's dgeo:cids array. This field enables programmatic correlation between queryable CIDs and specific assets, particularly when hrefs use HTTP gateway URLs that don't directly expose the CID.",
+          "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,})$"
+        },
+        "dgeo:cid_profile": {
           "type": "object",
+          "description": "OPTIONAL. Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding, etc.). This metadata enables reproducible DAG reconstruction and verification workflows.",
           "additionalProperties": true,
-          "patternProperties": {
-            "^[a-z0-9_]+$": {}
-          },
-          "description": "A reserved bucket for implementation-specific metadata and operational context. Keys SHOULD be vendor- or organization-prefixed and use snake_case (for example, myorg_pinning_policy, myorg_gateway_preferences)."
-        }
-      }
-    },
-    "dgeo_asset": {
-      "type": "object",
-      "required": ["name", "cid"],
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "A label for the resource. When the resource represents a decentralized form of a core asset, name SHOULD match the corresponding key in the Item's assets object. For container-level resources, it MAY be a stable semantic label such as collection_root or archive."
-        },
-        "cid": {
-          "type": "string",
-          "description": "The primary content-addressed identifier (for example, IPFS CID). The target MUST be immutable; mutable pointers such as IPNS or equivalent MUST be signaled using the roles field."
-        },
-        "roles": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true,
-          "description": "Semantic roles describing the purpose of this resource (for example, ['mirror', 'data'], ['data', 'primary'], ['collection', 'archive'], ['mutable']). A small, implementation-consistent vocabulary is RECOMMENDED; additional roles MAY be added as needed."
-        },
-        "description": {
-          "type": "string",
-          "description": "Human-readable description of the resource and its relationship to the core assets or collection (for example, 'IPFS CAR archive for full Level-2A product')."
-        },
-        "piece_cid": {
-          "type": "string",
-          "description": "Filecoin Piece CID (commP) used for storage verification and proof-of-replication workflows."
-        },
-        "cid_profile": {
-          "$ref": "#/definitions/cid_profile"
-        }
-      }
-    },
-    "cid_profile": {
-      "type": "object",
-      "description": "Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding, etc.).",
-      "additionalProperties": true,
-      "properties": {
-        "cid_version": {
-          "type": "integer",
-          "enum": [0, 1],
-          "description": "CID version (for example, 0 or 1). RECOMMENDED when cid_profile is present."
-        },
-        "multibase_encoding": {
-          "type": "string",
-          "description": "Multibase encoding of the CID string (for example, base32). OPTIONAL."
-        },
-        "hash_function": {
-          "type": "string",
-          "description": "RECOMMENDED. Multihash function used when constructing the CID (e.g. sha2-256, blake3)."
-        },
-        "chunk_algorithm": {
-          "type": "string",
-          "description": "RECOMMENDED: Algorithm used to split data (for example, fixed, balanced, rabin)."
-        },
-        "chunk_size": {
-          "type": "integer",
-          "description": "Target size of chunks in bytes. OPTIONAL."
-        },
-        "dag_width": {
-          "type": "integer",
-          "description": "Maximum number of links per block. OPTIONAL."
-        },
-        "dag_layout": {
-          "type": "string",
-          "description": "RECOMMENDED. Layout algorithm (for example, balanced, trickle, hamt-directory)."
-        },
-        "directory_wrapping": {
-          "type": "boolean",
-          "description": "OPTIONAL. Option to encode content by wrapping for single files with Directories as to retain the name of a single file."
-        },
-        "hamt_directory_fanout": {
-          "type": "integer",
-          "description": "OPTIONAL. Fanout determines how many \"buckets\" a directory is split into for HAMT-based UnixFS directories (default bitwidth is 8 == 256 leaves)."
-        },
-        "hamt_directory_threshold": {
-          "type": "integer",
-          "description": "OPTIONAL. Threshold size at which a regular directory transitions to a HAMT-sharded representation."
-        },
-        "leaf_envelope": {
-          "type": "string",
-          "description": "OPTIONAL. How leaf nodes are represented, either raw or dag-pb, enabling validation of expected leaf node types."
+          "properties": {
+            "cid_version": {
+              "type": "integer",
+              "enum": [0, 1],
+              "description": "CID version (0 or 1). RECOMMENDED when cid_profile is present."
+            },
+            "multibase_encoding": {
+              "type": "string",
+              "description": "Multibase encoding of the CID string (e.g., base32, base58btc). OPTIONAL."
+            },
+            "hash_function": {
+              "type": "string",
+              "description": "RECOMMENDED. Multihash function used when constructing the CID (e.g., sha2-256, blake3)."
+            },
+            "chunk_algorithm": {
+              "type": "string",
+              "description": "RECOMMENDED. Algorithm used to split data (e.g., fixed, balanced, rabin)."
+            },
+            "chunk_size": {
+              "type": "integer",
+              "description": "Target size of chunks in bytes. OPTIONAL."
+            },
+            "dag_width": {
+              "type": "integer",
+              "description": "Maximum number of links per block. OPTIONAL."
+            },
+            "dag_layout": {
+              "type": "string",
+              "description": "RECOMMENDED. Layout algorithm (e.g., balanced, trickle, hamt-directory)."
+            },
+            "directory_wrapping": {
+              "type": "boolean",
+              "description": "OPTIONAL. Wrap single files in directories to retain filename metadata."
+            },
+            "hamt_directory_fanout": {
+              "type": "integer",
+              "description": "OPTIONAL. Fanout for HAMT-sharded directories (default bitwidth is 8 == 256 leaves)."
+            },
+            "hamt_directory_threshold": {
+              "type": "integer",
+              "description": "OPTIONAL. Threshold size at which a regular directory transitions to HAMT-sharded representation."
+            },
+            "leaf_envelope": {
+              "type": "string",
+              "description": "OPTIONAL. How leaf nodes are represented (raw or dag-pb), enabling validation of expected leaf node types."
+            }
+          }
         }
       }
     }

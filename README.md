@@ -3,30 +3,32 @@
 - **Title:** Decentralized Geospatial (dgeo)  
 - **Identifier:** <https://github.com/DecentralizedGeo/dgeo-asset/blob/main/json-schema/schema.json>  
 - **Field Name Prefix:** `dgeo`  
-- **Scope:** Item, Collection  
+- **Scope:** Item, Collection, Assets  
 - **Extension Maturity Classification:** Proposal  
 - **Owner:** @DecentralizedGeo  
+- **Version:** 1.2.0
 
 ## Description
 
-The **Decentralized Geospatial (dgeo)** extension provides a standard set of fields to associate STAC Items and Collections with resources on the decentralized web (dweb), such as IPFS, Filecoin, and other decentralized storage backends.
+The **Decentralized Geospatial (dgeo)** extension provides a standard set of fields to associate STAC Items and Collections with resources on the decentralized web (dweb), such as IPFS, Filecoin, and other content-addressed storage systems.
 
 The primary objectives of this extension are:
 
-1. To enable building **dweb-aware collections and items** that can be searched using [Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/) (CID), an addressable "label" based on the content itself (e.g. asset data associated with the Item).
-2. To separate **discovery** of decentralized resources from concrete **access protocols**, allowing clients to plug in different dweb stacks without changing core STAC structures.
-3. To record, when desired, the **technical profile** of content-addressed DAGs (chunking, layout, hashing, sharding) so that clients can verify or reconstruct structures in a reproducible way.
+1. To enable **queryable CID-based discovery** through STAC API and pgstac, allowing users to search for Items by Content Identifier (CID).
+2. To provide **asset-level DAG metadata** that describes how content-addressed structures were generated, enabling reproducible verification and reconstruction.
+3. To separate **discovery** (queryable CID arrays) from **access** (asset hrefs and descriptions), following STAC best practices.
 
-Unlike extensions that describe *how* to access a specific file (for example, Storage or File extensions), `dgeo` describes **what** decentralized resources exist, how they relate to core STAC assets and containers, and how their DAGs are constructed.
+Unlike extensions that describe *how* to access a specific file, `dgeo` describes **what** decentralized resources exist in a queryable, pgstac-compatible format.
 
 > **Relation to other extensions**  
 >
-> - The `dgeo` extension is complementary to the [Alternate Assets extension](https://github.com/stac-extensions/alternate-assets). Alternate Assets focuses on alternate *location URIs* for the same file, while `dgeo` focuses on *content-addressed identifiers and DAG profiles*.
-> - Like the [MLM extension](https://github.com/stac-extensions/mlm), `dgeo` is designed to compose with multiple other extensions. A properly described decentralized dataset or model will typically use `dgeo` alongside EO, Raster, File, and possibly MLM depending on context.
+> - The `dgeo` extension is complementary to the [Alternate Assets extension](https://github.com/stac-extensions/alternate-assets). Alternate Assets provides alternate *location URIs* for the same file, while `dgeo` provides *content-addressed identifiers and technical DAG profiles*.
+> - Like the [MLM extension](https://github.com/stac-extensions/mlm), `dgeo` is designed to compose with multiple other extensions. A properly described decentralized dataset will typically use `dgeo` alongside EO, Raster, File, and possibly MLM depending on context.
 
 - Examples:  
-  - [Item example](./examples/item.json): Basic usage with `dgeo:assets` on an Item.  
-  - [Collection example](./examples/collection.json): Usage of `dgeo` at the Collection level.  
+  - [Item example](./examples/item.json): Landsat scene with multiple CIDs and asset-level metadata.  
+  - [Core example](./examples/item-core.json): Multiple CID representations for the same asset.
+  - [Collection example](./examples/collection.json): Collection-level dgeo fields.  
 - [JSON Schema](./json-schema/schema.json) (JSON Schema Draft-07).
 - [Changelog](./CHANGELOG.md)  
 
@@ -39,13 +41,15 @@ The `dgeo` extension **MUST** only be declared in STAC Items and Collections via
 
 - **Collections**  
   - Collections **MAY** implement `dgeo`.  
-  - When used at the Collection level, `dgeo:assets` and `dgeo:context` describe **default behavior, summaries, or collection-wide decentralized resources** (for example, a collection-level [Content Addressable Archive](https://ipld.io/specs/transport/car/) (CAR) or IPFS path to a directory) and MAY be echoed or specialized at the Item level.
+  - When used at the Collection level, `dgeo:cids` and `dgeo:piece_cids` describe collection-wide decentralized resources (for example, a collection-level CAR archive or IPFS directory root).
+  - Asset-level `dgeo` fields MAY be used in Collection assets.
 
 - **Items**  
   - Items **MAY** implement `dgeo`.  
-  - Item-level `dgeo` fields describe decentralized resources specific to that Item (for example, CIDs corresponding to a particular raster asset).
+  - Item-level `dgeo` fields describe decentralized resources specific to that Item (for example, CIDs corresponding to raster assets).
 
-The `dgeo` extension **does not** introduce fields scoped directly to Assets, Catalogs, or Links. Instead, it defines Item/Collection properties that **reference** decentralized representations of logical assets, directories, or preserved data on Filecoin.
+- **Assets**
+  - Both Item and Collection assets **MAY** include `dgeo:cid` and `dgeo:cid_profile` fields to provide asset-specific decentralized metadata.
 
 ## Fields
 
@@ -54,53 +58,283 @@ The fields in the table below can be used in these parts of STAC documents:
 - [ ] Catalogs  
 - [x] Collections  
 - [x] Item Properties (including Summaries in Collections)  
-- [ ] Assets (for both Collections and Items, including Item Asset Definitions in Collections)  
+- [x] Assets (for both Collections and Items, including Item Asset Definitions in Collections)  
 - [ ] Links  
 
-| Field Name      | Type                                          | Description |
-| --------------- | --------------------------------------------- | ----------- |
-| `dgeo:assets` | [[Assets Object](#dgeoassets-resource-map)] | **RECOMMENDED.** A discovery-layer map of decentralized resources associated with the Item or Collection. |
-| `dgeo:context` | [Context Object](#dgeocontext-user-flexibility) | A reserved bucket for implementation-specific metadata and operational context. |
+### Properties-Level Fields
 
-Implementations **SHOULD** treat `dgeo:assets` as a **derivative, discovery-oriented index** and **MUST NOT** use it as a replacement for core `assets`.
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `dgeo:cids` | string[] | **REQUIRED.** Array of IPFS Content Identifiers (CIDs) associated with this Item or Collection. Queryable via pgstac and STAC API. |
+| `dgeo:piece_cids` | string[] | OPTIONAL. Array of Filecoin Piece CIDs (commP) used for storage verification and proof-of-replication workflows. Queryable via pgstac and STAC API. |
 
-## `dgeo:assets` resource map
+### Asset-Level Fields
 
-**Type:** Array of Objects (each object is a *dgeo Asset Resource*).
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `dgeo:cid` | string | OPTIONAL. The IPFS CID that this asset represents. MUST appear in the Item's `dgeo:cids` array. Enables programmatic CID-to-asset correlation. |
+| `dgeo:cid_profile` | object | OPTIONAL. Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding). See [CID Profile Object](#cid-profile-object). |
 
-`dgeo:assets` describes decentralized resources that correspond to:  
+### Field Details
 
-- Individual logical assets in the Item’s `assets` object (for example, a GeoTIFF retrievable from IPFS).  
-- Container-level resources that group multiple logical assets (for example, an IPFS directory, CAR archive representing a full product bundle, or content prepared and preserved on Filecoin).
+#### `dgeo:cids`
 
-`dgeo:assets` **MUST NOT** enumerate block-level CIDs or internal DAG nodes. For complex DAGs or long block lists, implementations **SHOULD** reference the root dag of a higher-level CAR, manifest, or directory CID instead.
+**Type:** Array of strings  
+**REQUIRED** when the dgeo extension is declared.
 
-> **Note:** The `name` field is **not required to be unique** within `dgeo:assets`. Multiple entries with the same `name` MAY exist to represent different DAG structures or backends for the same logical asset (for example, streaming vs archival). Implementations grouping entries **SHOULD** consider both `name` and `roles`.
+An array of IPFS Content Identifiers (CIDs) associated with this Item or Collection. Each CID **MUST** be immutable; mutable pointers such as IPNS **MUST NOT** be included.
 
-### dgeo Asset Resource fields
+This field is designed for **queryability** via pgstac and STAC API CQL2 filters, enabling users to search for Items by CID.
 
-| Field Name      | Type                        | Description |
-| --------------- | --------------------------- | ----------- |
-| `name`          | string                      | **REQUIRED.** A label for the resource. When the resource represents a decentralized form of a core asset, `name` SHOULD match the corresponding key in the Item’s `assets` object. For container-level resources, it MAY be a stable semantic label such as `collection_root` or `archive`. |
-| `cid`           | string                      | **REQUIRED.** The primary content-addressed identifier (for example, IPFS CID). The target **MUST** be immutable; mutable pointers such as IPNS or equivalent MUST be signaled using the `roles` field (see below). |
-| `roles`         | string[]                    | Semantic roles describing the purpose of this resource (for example, `["mirror", "data"]`, `["data", "primary"]`, `["collection", "archive"]`, `["mutable"]`). A small, implementation-consistent vocabulary is **RECOMMENDED**; additional roles MAY be added as needed. |
-| `description` | string                      | OPTIONAL. Human-readable description of the resource and its relationship to the core assets or collection (for example, “IPFS CAR archive for full Level-2A product”). |
-| `piece_cid`     | string                      | OPTIONAL. Filecoin Piece CID (commP) used for storage verification and proof-of-replication workflows. |
-| `cid_profile` | [CID Profile Object](#cid-profile-object) | OPTIONAL. Technical details about how the CID’s DAG was generated (chunking, hashing, layout, sharding, etc.). |
+**CID Format Validation:**
 
-### Recommended `roles` semantics
+- CIDv0: `^Qm[1-9A-HJ-NP-Za-km-z]{44}$`
+- CIDv1: `^b[a-z2-7]{58,}$`
 
-The following roles are **RECOMMENDED** and SHOULD NOT be reinterpreted with conflicting semantics, similar to how MLM recommends task/role vocabularies.
+**Constraints:**
 
-- `mirror`: Resource mirrors a core `assets` entry via a decentralized backend.  
-- `data`: Resource contains primary data content (raster, vector, point cloud, etc.).  
-- `primary`: Preferred decentralized representation for general use.  
-- `alternative`: Alternate representation (different chunking, compression, or layout).  
-- `collection`: Resource represents a container of multiple assets (for example, directory, bundle, or manifest).  
-- `archive`: Resource represents an archival or bundled form (for example, CAR, tar in IPFS).  
-- `mutable`: Resource is intentionally mutable (for example, IPNS-style pointer). Consumers SHOULD NOT treat it as reproducible.
+- Minimum 1 item (`minItems: 1`)
+- All items must be unique (`uniqueItems: true`)
 
-Implementations MAY add additional roles, but SHOULD avoid redefining the meaning of these core roles.
+**Example:**
+
+```json
+{
+  "properties": {
+    "datetime": "2020-12-04T22:38:32Z",
+    "dgeo:cids": [
+      "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+      "bafybeic2zycyt36xnkbvbzqbrmhb3jndcylvqywb4zfqn7i6kcsjjl62ka"
+    ]
+  }
+}
+```
+
+#### `dgeo:piece_cids`
+
+**Type:** Array of strings  
+**OPTIONAL**
+
+An array of Filecoin Piece CIDs (commP) used for storage verification and proof-of-replication workflows. Like `dgeo:cids`, this field is queryable via pgstac.
+
+**Piece CID Format Validation:**
+
+- `^baga6ea[a-z2-7]{52,}$`
+
+**Constraints:**
+
+- All items must be unique (`uniqueItems: true`)
+
+**Example:**
+
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybei..."],
+    "dgeo:piece_cids": [
+      "baga6ea4seaqao7s73y24kcutaosvacpdjgfe5pw76ooefnyqw4ynr3d2y6x2mpq"
+    ]
+  }
+}
+```
+
+#### `dgeo:cid` (Asset-Level)
+
+**Type:** String  
+**OPTIONAL**
+
+The IPFS CID that this specific asset represents. When present, this CID **MUST** also appear in the Item's `dgeo:cids` array at the properties level.
+
+This field solves the **CID-to-asset correlation problem**: after querying Items by CID, clients can programmatically identify which asset that CID corresponds to, even when the asset `href` uses an HTTP gateway URL.
+
+**Example:**
+
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybeigdyrzt..."]
+  },
+  "assets": {
+    "red": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybeigdyrzt...",
+      "type": "image/tiff",
+      "dgeo:cid": "bafybeigdyrzt...",
+      "dgeo:cid_profile": {...}
+    }
+  }
+}
+```
+
+**Lookup Pattern:**
+
+```python
+def find_asset_by_cid(item, target_cid):
+    for asset_key, asset in item['assets'].items():
+        if asset.get('dgeo:cid') == target_cid:
+            return asset_key, asset
+    return None, None
+```
+
+#### `dgeo:cid_profile` (Asset-Level)
+
+**Type:** Object  
+**OPTIONAL**
+
+Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding, etc.). This metadata enables reproducible DAG reconstruction and verification workflows.
+
+See the [CID Profile Object](#cid-profile-object) section for detailed field definitions.
+
+## Queryability
+
+The `dgeo` extension is designed for queryability via **pgstac** and **STAC API** implementations that support CQL2 filtering.
+
+### pgstac Compatibility
+
+Both `dgeo:cids` and `dgeo:piece_cids` are **scalar string arrays**, which work seamlessly with pgstac's `a_contains` operator and PostgreSQL's native JSONB array containment (`@>`) operator.
+
+**Example SQL Query:**
+
+```sql
+-- Find all Items containing a specific CID
+SELECT * FROM pgstac.items 
+WHERE content->'properties'->'dgeo:cids' @> '["bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"]'::jsonb;
+```
+
+### CQL2 Query Examples
+
+**Search by CID:**
+
+```json
+{
+  "filter-lang": "cql2-json",
+  "filter": {
+    "op": "a_contains",
+    "args": [
+      {"property": "dgeo:cids"},
+      ["bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"]
+    ]
+  }
+}
+```
+
+**Search by Piece CID:**
+
+```json
+{
+  "filter-lang": "cql2-json",
+  "filter": {
+    "op": "a_contains",
+    "args": [
+      {"property": "dgeo:piece_cids"},
+      ["baga6ea4seaqao7s73y24kcutaosvacpdjgfe5pw76ooefnyqw4ynr3d2y6x2mpq"]
+    ]
+  }
+}
+```
+
+### STAC Browser UI Support
+
+Scalar array fields like `dgeo:cids` will appear in STAC Browser's filter dropdown menus, allowing users to interactively filter Items by CID values.
+
+## CID-to-Asset Correlation
+
+After querying Items by CID, clients often need to identify **which asset** that CID corresponds to. The `dgeo:cid` asset-level field enables this programmatic correlation.
+
+### Why This Matters
+
+Consider an Item with multiple assets:
+
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybei111...", "bafybei222...", "bafybei333..."]
+  },
+  "assets": {
+    "red": {"href": "https://gateway.pinata.cloud/ipfs/bafybei111..."},
+    "nir": {"href": "https://example.com/nir.tif"},
+    "product_bundle": {"href": "ipfs://bafybei222..."}
+  }
+}
+```
+
+**Problem:** After querying for `bafybei111...`, how do you know it corresponds to the `red` asset?
+
+**Solution:** Add `dgeo:cid` to each asset:
+
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybei111...", "bafybei222..."]
+  },
+  "assets": {
+    "red": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
+      "dgeo:cid": "bafybei111...",
+      "dgeo:cid_profile": {...}
+    },
+    "product_bundle": {
+      "href": "ipfs://bafybei222...",
+      "dgeo:cid": "bafybei222...",
+      "dgeo:cid_profile": {...}
+    }
+  }
+}
+```
+
+### Implementation Examples
+
+**Python:**
+
+```python
+from pystac_client import Client
+
+client = Client.open("https://example.com/stac")
+
+# Search by CID
+search = client.search(
+    filter={
+        "op": "a_contains",
+        "args": [{"property": "dgeo:cids"}, ["bafybei111..."]]
+    }
+)
+
+for item in search.items():
+    asset_key, asset = find_asset_by_cid(item, "bafybei111...")
+    if asset:
+        print(f"Found CID in asset '{asset_key}'")
+        print(f"  href: {asset['href']}")
+        print(f"  type: {asset['type']}")
+```
+
+**JavaScript:**
+
+```javascript
+function findAssetByCid(item, targetCid) {
+  for (const [assetKey, asset] of Object.entries(item.assets)) {
+    if (asset['dgeo:cid'] === targetCid) {
+      return { assetKey, asset };
+    }
+  }
+  return null;
+}
+
+const items = await fetch('/search', {
+  method: 'POST',
+  body: JSON.stringify({
+    filter: {
+      op: 'a_contains',
+      args: [{ property: 'dgeo:cids' }, ['bafybei111...']]
+    }
+  })
+}).then(r => r.json());
+
+items.features.forEach(item => {
+  const result = findAssetByCid(item, 'bafybei111...');
+  if (result) {
+    console.log(`Found CID in asset '${result.assetKey}'`);
+  }
+});
+```
 
 ## CID Profile Object
 
@@ -108,126 +342,257 @@ The **CID Profile Object** describes the parameters that affect DAG and CID gene
 
 When `cid_profile` is present, the following fields are **RECOMMENDED**: `cid_version`, `chunk_algorithm`, `dag_layout`, and `hash_function`.
 
-| Field Name                   | Type    | Description |
-| ---------------------------- | ------- | ----------- |
-| `cid_version`                | integer | CID version (for example, `0` or `1`). RECOMMENDED when `cid_profile` is present.  [Details](https://docs.ipfs.tech/concepts/content-addressing/#cid-versions) on encoding difference. |
-| `multibase_encoding`         | string  | OPTIONAL. Multibase encoding of the CID string (for example, `base32`). |
-| `hash_function`              | string  | RECOMMENDED. Multihash function used when constructing the CID (e.g. `sha2-256`, `blake3`). |
-| `chunk_algorithm`            | string  | RECOMMENDED: Algorithm used to split data (for example, `fixed`, `balanced`, `rabin`). |
-| `chunk_size`                 | integer | OPTIONAL. Target size of chunks in bytes. |
-| `dag_width`                  | integer | OPTIONAL. Maximum number of links per block. |
-| `dag_layout`                 | string  | RECOMMENDED. Layout algorithm (for example, `balanced`, `trickle`, `hamt-directory`). |
-| `directory_wrapping`         | boolean | OPTIONAL. Option to encode content by wrapping for single files with `Directories` as to retain the name of a single file. |
-| `hamt_directory_fanout`      | integer | OPTIONAL. Fanout determines how many "buckets" a directory is split into for HAMT-based UnixFS directories (default bitwidth is 8 == 256 leaves). |
-| `hamt_directory_threshold` | integer | OPTIONAL. Threshold size at which a regular directory transitions to a HAMT-sharded representation. |
-| `leaf_envelope`              | string  | OPTIONAL. How leaf nodes are represented, either `raw` or `dag-pb`, enabling validation of expected leaf node types. |
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `cid_version` | integer | CID version (`0` or `1`). RECOMMENDED when `cid_profile` is present. [Details](https://docs.ipfs.tech/concepts/content-addressing/#cid-versions) on encoding differences. |
+| `multibase_encoding` | string | OPTIONAL. Multibase encoding of the CID string (e.g., `base32`, `base58btc`). |
+| `hash_function` | string | RECOMMENDED. Multihash function used when constructing the CID (e.g., `sha2-256`, `blake3`). |
+| `chunk_algorithm` | string | RECOMMENDED. Algorithm used to split data (e.g., `fixed`, `balanced`, `rabin`). |
+| `chunk_size` | integer | OPTIONAL. Target size of chunks in bytes. |
+| `dag_width` | integer | OPTIONAL. Maximum number of links per block. |
+| `dag_layout` | string | RECOMMENDED. Layout algorithm (e.g., `balanced`, `trickle`, `hamt-directory`). |
+| `directory_wrapping` | boolean | OPTIONAL. Wrap single files in directories to retain filename metadata. |
+| `hamt_directory_fanout` | integer | OPTIONAL. Fanout for HAMT-sharded directories (default bitwidth is 8 == 256 leaves). |
+| `hamt_directory_threshold` | integer | OPTIONAL. Threshold size at which a regular directory transitions to HAMT-sharded representation. |
+| `leaf_envelope` | string | OPTIONAL. How leaf nodes are represented (`raw` or `dag-pb`), enabling validation of expected leaf node types. |
 
-JSON Schema for `cid_profile` SHOULD:
+JSON Schema for `cid_profile` uses `"additionalProperties": true` to allow other UnixFS/IPLD parameters in the future.
 
-- Declare explicit types for the fields above.  
-- Use `"additionalProperties": true` to allow other UnixFS/IPLD parameters in the future.  
-
-## `dgeo:context` user flexibility
-
-**Type:** Object  
-
-`dgeo:context` is a reserved bucket for implementation-specific logic, policies, and operational metadata that do not belong in the core `dgeo:assets` model but are still relevant for decentralized geospatial workflows.
-
-Similar to MLM’s `mlm:hyperparameters` and other open objects, this is an **open, implementation-defined** structure. Keys and values inside `dgeo:context` are not globally standardized and **MUST NOT** affect cross-implementation validation semantics directly. Fields that become widely used SHOULD be proposed as new core `dgeo:` fields.
-
-### Conventions
-
-Implementations **SHOULD** follow these conventions:
-
-- Keys **SHOULD** be vendor or organization prefixed and use `snake_case`, for example: `myorg_pinning_policy`, `myorg_gateway_preferences`.
-- Values MAY be any JSON type (object, array, string, number, boolean, null).  
-- Keys SHOULD be stable and documented within the organization, especially if they appear in public catalogs.  
-
-JSON Schema for `dgeo:context` **MUST** set `"additionalProperties": true`, but MAY include a `patternProperties` hint to encourage `snake_case` keys.
-
-### Example
+**Example:**
 
 ```json
-"dgeo:context": {
-  "myorg_pinning_policy": {
-    "preferred_gateways": [
-      "https://ipfs.myorg.org",
-      "https://dweb.link"
-    ],
-    "replication_factor": 3,
-    "automatic_pin": true
-  },
-  "myorg_verification": {
-    "require_cid_profile": true,
-    "allowed_hash_functions": ["sha2-256", "blake3"]
+{
+  "dgeo:cid_profile": {
+    "cid_version": 1,
+    "chunk_algorithm": "fixed",
+    "chunk_size": 262144,
+    "dag_layout": "balanced",
+    "hash_function": "sha2-256"
   }
 }
 ```
 
-## Usage patterns
+## Usage Patterns
 
-The `dgeo` extension enables several repeatable patterns, analogous to how MLM defines patterns for model assets and runtimes.
+### 1. Asset Mirroring
 
-### 1. Asset mirroring (“search index”)
+In this pattern, core assets are mirrored on decentralized storage with CIDs tracked at the properties level and asset-level metadata.
 
-In this pattern, each asset in the Item’s `assets` object is mirrored by one or more `dgeo:assets` entries.
+**Example:**
 
-- `name` SHOULD match the asset key (for example, `B01`, `thumbnail`, `mlm:model`, `xml`).  
-- `roles` SHOULD include `["mirror", "data"]` for primary data mirrors.
-- `cid_profile` MAY be used for reproducible mirrors of large products.  
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybei111...", "bafybei222..."]
+  },
+  "assets": {
+    "red": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
+      "type": "image/tiff",
+      "roles": ["data", "mirror"],
+      "dgeo:cid": "bafybei111...",
+      "dgeo:cid_profile": {
+        "cid_version": 1,
+        "chunk_algorithm": "fixed",
+        "chunk_size": 262144,
+        "dag_layout": "balanced",
+        "hash_function": "sha2-256"
+      }
+    },
+    "nir": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybei222...",
+      "type": "image/tiff",
+      "roles": ["data", "mirror"],
+      "dgeo:cid": "bafybei222...",
+      "dgeo:cid_profile": {
+        "cid_version": 1,
+        "chunk_algorithm": "fixed",
+        "chunk_size": 262144,
+        "dag_layout": "balanced",
+        "hash_function": "sha2-256"
+      }
+    }
+  }
+}
+```
 
-### 2. Multi-DAG representations
+### 2. Multiple CID Representations
 
-A single logical asset (for example, a model, a raster, or a bundle) may be available as multiple CIDs optimized for different trade-offs.
+When a single logical asset has multiple CID representations (different chunking, compression, or layout), create separate asset entries.
 
-- All entries use the same `name`.  
-- `roles` distinguish them, for example:  
-  - `["data", "primary"]` for the main representation.  
-  - `["data", "alternative"]` for an alternate layout or compression.  
-- `cid_profile` SHOULD capture differences in chunking, hash function, or layout between versions.  
+**Example:**
 
-### 3. Container reference (“folder” / archive)
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybei111...", "QmLegacy..."]
+  },
+  "assets": {
+    "visual": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
+      "type": "image/tiff",
+      "roles": ["data", "primary"],
+      "description": "Primary CID v1 using fixed chunking",
+      "dgeo:cid": "bafybei111...",
+      "dgeo:cid_profile": {
+        "cid_version": 1,
+        "chunk_algorithm": "fixed",
+        "chunk_size": 262144
+      }
+    },
+    "visual-legacy": {
+      "href": "ipfs://QmLegacy...",
+      "type": "image/tiff",
+      "roles": ["data", "alternative"],
+      "description": "Legacy CID v0 for backward compatibility",
+      "dgeo:cid": "QmLegacy...",
+      "dgeo:cid_profile": {
+        "cid_version": 0,
+        "chunk_algorithm": "fixed",
+        "chunk_size": 262144
+      }
+    }
+  }
+}
+```
 
-A `dgeo` resource may represent a container that aggregates multiple assets, such as:  
+### 3. Container Resources (CAR Files / Directories)
 
-- IPFS directory containing all item files.  
-- CAR file representing a product bundle.  
+A `dgeo` resource may represent a container that aggregates multiple assets, such as an IPFS directory or CAR file.
 
-Typical configuration:
+**Example:**
 
-- `name`: a semantic label such as `collection_root` or `bundle`.  
-- `roles`: SHOULD include `["collection", "archive"]` or similar.  
-- `cid_profile`: SHOULD describe directory layout and any HAMT parameters if applicable.  
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybei111...", "bafybei222...", "bafybei333..."],
+    "dgeo:piece_cids": ["baga6ea..."]
+  },
+  "assets": {
+    "red": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
+      "dgeo:cid": "bafybei111...",
+      "dgeo:cid_profile": {...}
+    },
+    "nir": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybei222...",
+      "dgeo:cid": "bafybei222...",
+      "dgeo:cid_profile": {...}
+    },
+    "product_bundle": {
+      "href": "ipfs://bafybei333...",
+      "type": "application/vnd.ipld.car",
+      "title": "Complete Product Bundle (CAR)",
+      "roles": ["archive"],
+      "description": "CAR archive containing all Level-2 product files",
+      "dgeo:cid": "bafybei333...",
+      "dgeo:cid_profile": {
+        "cid_version": 1,
+        "dag_layout": "hamt-directory",
+        "hash_function": "sha2-256",
+        "directory_wrapping": true,
+        "hamt_directory_fanout": 256,
+        "hamt_directory_threshold": 3
+      }
+    }
+  }
+}
+```
 
-### 4. Decentralized model bundles (with MLM)
+## Migration from v1.0
 
-When used alongside the MLM extension, `dgeo` can describe decentralized packaging of model assets and runtimes.
+**⚠️ Breaking Changes:** Version 1.2 is a major breaking change from v1.0-wip2. Migration is required for existing implementations.
 
-- `assets["model"]` (with `mlm:model` role) may have one or more `dgeo:assets` entries, with `name: "model"` and roles such as `["mirror", "data"]` or `["data", "primary"]`.  
-- A collection-level CAR file containing model, source code, and container images may be represented as `name: "mlm_bundle"`, `roles: ["collection", "archive"]`.  
-- `dgeo:context` MAY include runtime-specific hints (for example, gateways preferred for pulling the model artifact).  
+### Key Changes
 
-## Implementation pitfalls and best practices
+| v1.0-wip2 | v1.2 | Notes |
+| --- | --- | --- |
+| `dgeo:assets[].cid` | `dgeo:cids[]` | Flattened to scalar array for queryability |
+| `dgeo:assets[].piece_cid` | `dgeo:piece_cids[]` | Flattened to scalar array for queryability |
+| `dgeo:assets[].cid_profile` | `assets[key].dgeo:cid_profile` | Moved to asset level |
+| `dgeo:assets[].roles` | `assets[key].roles` | Standard STAC asset roles |
+| `dgeo:assets[].description` | `assets[key].description` | Standard STAC asset description |
+| `dgeo:assets[].name` | Asset object key | Standard STAC pattern |
+| N/A | `assets[key].dgeo:cid` | **NEW:** Explicit CID-to-asset correlation |
+| `dgeo:context` | **REMOVED** | Not needed for MVP |
 
-### Synchronization drift
+### Conversion Example
 
-- **Risk:** `dgeo:assets` describes resources that often correspond to `assets`. If `assets` are updated or renamed without updating `dgeo:assets`, decentralized references become stale.
-- **Best Practice:** `dgeo:assets` SHOULD be generated or updated **programmatically** at ingest/publish time from authoritative sources (assets and storage backends) rather than edited manually.
+**v1.0-wip2:**
 
-### Mutability vs reproducibility
+```json
+{
+  "properties": {
+    "dgeo:assets": [
+      {
+        "name": "red",
+        "cid": "bafybei...",
+        "roles": ["mirror", "data"],
+        "description": "IPFS mirror of red band",
+        "cid_profile": {...}
+      }
+    ],
+    "dgeo:context": {...}
+  },
+  "assets": {
+    "red": {
+      "href": "https://example.com/red.tif",
+      "roles": ["data"]
+    }
+  }
+}
+```
 
-- **Risk:** Mutable pointers (for example, IPNS or equivalent) conflict with STAC’s emphasis on reproducible Items if used without explicit signaling or change tracking.
-- **Best Practices:**  
-  - If the CID is mutable, include the `"mutable"` value in `roles` to signal non-reproducible references.  
-  - Track pointer updates in a separate audit log or versioned collection when reproducibility is required.  
-  - For scientific or regulatory workflows, clients SHOULD prefer immutable `cid` entries without `"mutable"` semantics.
+**v1.2:**
 
-### Indexing and API behavior
+```json
+{
+  "properties": {
+    "dgeo:cids": ["bafybei..."]
+  },
+  "assets": {
+    "red": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybei...",
+      "roles": ["data", "mirror"],
+      "description": "IPFS mirror of red band",
+      "dgeo:cid": "bafybei...",
+      "dgeo:cid_profile": {...}
+    }
+  }
+}
+```
 
-- **Risk:** Exposing many CIDs directly in filters or summaries can hurt index size and query performance.
-- **Best Practices:**  
-  - STAC APIs SHOULD index and summarize **structural fields** (`name`, `roles`) rather than `cid` values, similar to how MLM and SAT summarize key properties.
-  - Collections MAY provide summaries for `dgeo:assets.roles` and `dgeo:assets.name` to support common discovery patterns (for example, “Items with IPFS archives of the full bundle”)
+### Migration Checklist
+
+- [ ] Replace `dgeo:assets` array with `dgeo:cids` array
+- [ ] Extract all `piece_cid` values into `dgeo:piece_cids` array
+- [ ] Move `cid_profile` to asset-level `dgeo:cid_profile`
+- [ ] Merge `roles` and `description` into standard asset fields
+- [ ] Add `dgeo:cid` to each asset for correlation
+- [ ] Remove `dgeo:context` (store externally if needed)
+- [ ] Update schema validation to v1.2
+- [ ] Update pgstac queryable definitions
+- [ ] Update client code that reads `dgeo:assets`
+- [ ] Update ingest pipelines
+- [ ] Re-index existing Items in STAC API
+
+## Implementation Best Practices
+
+### Synchronization
+
+`dgeo:cids` and asset-level `dgeo:cid` fields **SHOULD** be generated programmatically at ingest/publish time from authoritative sources (storage backends, asset manifest) rather than edited manually.
+
+### Mutability
+
+Mutable pointers (e.g., IPNS) **MUST NOT** be included in `dgeo:cids`. All CIDs must be immutable to ensure reproducible queries and scientific integrity.
+
+### Indexing
+
+STAC APIs using pgstac **SHOULD** register `dgeo:cids` and `dgeo:piece_cids` as queryables to enable CQL2 filtering.
+
+### Asset Correlation
+
+When using HTTP gateway URLs for asset `href` values, always include `dgeo:cid` at the asset level to enable programmatic CID-to-asset correlation.
 
 ## Contributing
 
