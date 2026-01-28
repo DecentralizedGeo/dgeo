@@ -1,7 +1,7 @@
 # Decentralized Geospatial Extension Specification
 
 - **Title:** Decentralized Geospatial (dgeo)  
-- **Identifier:** [https://github.com/DecentralizedGeo/dgeo-asset/blob/main/json-schema/schema.json](https://github.com/DecentralizedGeo/dgeo)
+- **Identifier:** <https://raw.githubusercontent.com/DecentralizedGeo/dgeo/refs/heads/main/json-schema/schema.json>
 - **Field Name Prefix:** `dgeo`  
 - **Scope:** Item, Collection, Assets  
 - **Extension Maturity Classification:** Proposal  
