@@ -19,62 +19,38 @@
   "providers": [
     {
       "name": "USGS",
-      "roles": [
-        "producer",
-        "licensor"
-      ],
+      "roles": ["producer", "licensor"],
       "url": "https://www.usgs.gov/landsat-missions/landsat-collection-2"
     },
     {
       "name": "Decentralized Geospatial Collaborative",
-      "roles": [
-        "host"
-      ],
+      "roles": ["host"],
       "url": "https://decentralizedgeo.org"
     }
   ],
   "extent": {
     "spatial": {
-      "bbox": [
-        [
-          -180,
-          -90,
-          180,
-          90
-        ]
-      ]
+      "bbox": [[-180, -90, 180, 90]]
     },
     "temporal": {
-      "interval": [
-        [
-          "2013-04-11T00:00:00Z",
-          null
-        ]
-      ]
+      "interval": [["2013-04-11T00:00:00Z", null]]
     }
   },
   "summaries": {
-    "platform": [
-      "landsat-8"
-    ],
-    "instruments": [
-      "oli",
-      "tirs"
-    ],
-    "gsd": [
-      30
-    ]
+    "platform": ["landsat-8"],
+    "instruments": ["oli", "tirs"],
+    "gsd": [30]
   },
-  "dgeo:assets": [
-    {
-      "name": "collection_root",
-      "cid": "bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u",
-      "roles": [
-        "collection",
-        "archive"
-      ],
+  "dgeo:cids": ["bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u"],
+  "assets": {
+    "collection_root": {
+      "href": "ipfs://bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u",
+      "type": "application/json",
+      "title": "Collection Root Directory",
+      "roles": ["metadata", "archive"],
       "description": "IPFS directory containing indexed collection metadata and sample items",
-      "cid_profile": {
+      "dgeo:cid": "bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u",
+      "dgeo:cid_profile": {
         "cid_version": 1,
         "dag_layout": "hamt-directory",
         "hash_function": "murmur3-x64-64",
@@ -83,21 +59,6 @@
         "hamt_directory_threshold": 10
       }
     }
-  ],
-  "dgeo:context": {
-    "collection_pinning_policy": {
-      "strategy": "incremental",
-      "target_providers": [
-        "Filecoin",
-        "Storj"
-      ],
-      "min_redundancy": 5
-    },
-    "preferred_gateways": [
-      "ipfs.io",
-      "dweb.link",
-      "cloudflare-ipfs.com"
-    ]
   },
   "links": [
     {
