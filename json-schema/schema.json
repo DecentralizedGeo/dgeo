@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/refs/heads/pgstac-variant/json-schema/schema.json",
+  "$id": "https://raw.githubusercontent.com/DecentralizedGeo/dgeo/refs/heads/main/json-schema/schema.json",
   "title": "Decentralized Geospatial Extension",
   "description": "Associates STAC Items and Collections with decentralized web resources. This extension enables queryable CID-based discovery while providing technical DAG metadata at the asset level.",
   "type": "object",
@@ -9,7 +9,7 @@
     "stac_extensions": {
       "type": "array",
       "contains": {
-        "const": "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/refs/heads/pgstac-variant/json-schema/schema.json"
+        "const": "https://raw.githubusercontent.com/DecentralizedGeo/dgeo/refs/heads/main/json-schema/schema.json"
       }
     }
   },
