@@ -51,31 +51,22 @@ The `dgeo` extension **MUST** only be declared in STAC Items and Collections via
 - **Assets**
   - Both Item and Collection assets **MAY** include `dgeo:cid` and `dgeo:cid_profile` fields to provide asset-specific decentralized metadata.
 
-## Fields
+## Field Details
 
 The fields in the table below can be used in these parts of STAC documents:
 
 - [ ] Catalogs  
-- [x] Collections  
+- [x] Collections 
 - [x] Item Properties (including Summaries in Collections)  
 - [x] Assets (for both Collections and Items, including Item Asset Definitions in Collections)  
 - [ ] Links  
 
-### Properties-Level Fields
+### Property Level Fields
 
 | Field Name | Type | Description |
 | --- | --- | --- |
 | `dgeo:cids` | string[] | **REQUIRED.** Array of IPFS Content Identifiers (CIDs) associated with this Item or Collection. Queryable via pgstac and STAC API. |
 | `dgeo:piece_cids` | string[] | OPTIONAL. Array of Filecoin Piece CIDs (commP) used for storage verification and proof-of-replication workflows. Queryable via pgstac and STAC API. |
-
-### Asset-Level Fields
-
-| Field Name | Type | Description |
-| --- | --- | --- |
-| `dgeo:cid` | string | OPTIONAL. The IPFS CID that this asset represents. MUST appear in the Item's `dgeo:cids` array. Enables programmatic CID-to-asset correlation. |
-| `dgeo:cid_profile` | object | OPTIONAL. Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding). See [CID Profile Object](#cid-profile-object). |
-
-### Field Details
 
 #### `dgeo:cids`
 
@@ -138,6 +129,23 @@ An array of Filecoin Piece CIDs (commP) used for storage verification and proof-
 }
 ```
 
+### Asset Level Fields
+
+| Field Name | Type | Description |
+| --- | --- | --- |
+| `dgeo:cid_profile` | object | OPTIONAL. Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding). See [CID Profile Object](#cid-profile-object). |
+| `dgeo:cid` | string | OPTIONAL. The IPFS CID that this asset represents. MUST appear in the Item's `dgeo:cids` array. Enables programmatic CID-to-asset correlation. |
+| `dgeo:piece_cid` | string | OPTIONAL. The Filecoin Piece CID (commP) that this specific asset represents. When present, this CID **MUST** also appear in the Item's `dgeo:piece_cids` array at the properties level. |
+
+#### `dgeo:cid_profile` (Asset-Level)
+
+**Type:** Object  
+**OPTIONAL**
+
+Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding, etc.). This metadata enables reproducible DAG reconstruction and verification workflows.
+
+See the [CID Profile Object](#cid-profile-object) section for detailed field definitions.
+
 #### `dgeo:cid` (Asset-Level)
 
 **Type:** String  
@@ -191,15 +199,6 @@ This field solves the **Piece CID-to-asset correlation problem**: after querying
   }
 }
 ```
-
-#### `dgeo:cid_profile` (Asset-Level)
-
-**Type:** Object  
-**OPTIONAL**
-
-Technical details about how the CID's DAG was generated (chunking, hashing, layout, sharding, etc.). This metadata enables reproducible DAG reconstruction and verification workflows.
-
-See the [CID Profile Object](#cid-profile-object) section for detailed field definitions.
 
 ## CID Profile Object
 
