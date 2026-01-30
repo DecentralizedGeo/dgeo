@@ -2,7 +2,7 @@
   "type": "Collection",
   "stac_version": "1.0.0",
   "stac_extensions": [
-    "https://raw.githubusercontent.com/DecentralizedGeo/dgeo-asset/main/json-schema/schema.json"
+    "https://raw.githubusercontent.com/DecentralizedGeo/dgeo/refs/heads/main/json-schema/schema.json"
   ],
   "id": "landsat-8-l2-collection",
   "title": "Landsat 8 Level-2, Collection 2",
@@ -19,44 +19,73 @@
   "providers": [
     {
       "name": "USGS",
-      "roles": ["producer", "licensor"],
+      "roles": [
+        "producer",
+        "licensor"
+      ],
       "url": "https://www.usgs.gov/landsat-missions/landsat-collection-2"
     },
     {
       "name": "Decentralized Geospatial Collaborative",
-      "roles": ["host"],
+      "roles": [
+        "host"
+      ],
       "url": "https://decentralizedgeo.org"
     }
   ],
   "extent": {
     "spatial": {
-      "bbox": [[-180, -90, 180, 90]]
+      "bbox": [
+        [
+          -180,
+          -90,
+          180,
+          90
+        ]
+      ]
     },
     "temporal": {
-      "interval": [["2013-04-11T00:00:00Z", null]]
+      "interval": [
+        [
+          "2013-04-11T00:00:00Z",
+          null
+        ]
+      ]
     }
   },
   "summaries": {
-    "platform": ["landsat-8"],
-    "instruments": ["oli", "tirs"],
-    "gsd": [30]
+    "platform": [
+      "landsat-8"
+    ],
+    "instruments": [
+      "oli",
+      "tirs"
+    ],
+    "gsd": [
+      30
+    ]
   },
-  "dgeo:cids": ["bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u"],
+  "dgeo:cids": [
+    "bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u"
+  ],
   "assets": {
     "collection_root": {
       "href": "ipfs://bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u",
       "type": "application/json",
       "title": "Collection Root Directory",
-      "roles": ["metadata", "archive"],
+      "roles": [
+        "metadata",
+        "archive"
+      ],
       "description": "IPFS directory containing indexed collection metadata and sample items",
       "dgeo:cid": "bafybeibxm2nsadl3fnxv2sxcxmxaco2jl53wpeorjdzidjwf5aqdg7wa6u",
       "dgeo:cid_profile": {
         "cid_version": 1,
-        "dag_layout": "hamt-directory",
-        "hash_function": "murmur3-x64-64",
-        "directory_wrapping": true,
-        "hamt_directory_fanout": 256,
-        "hamt_directory_threshold": 10
+        "dag_layout": "balanced",
+        "hash_function": "sha2-256",
+        "empty_directories": true,
+        "hamt_directory_fanout": "256 blocks",
+        "hamt_directory_threshold": "256KiB block-bytes"
       }
     }
   },

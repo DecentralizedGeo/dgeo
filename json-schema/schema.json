@@ -16,6 +16,7 @@
   "oneOf": [
     {
       "title": "STAC Item",
+      "$comment": "This is the schema for STAC Items.",
       "type": "object",
       "required": ["type", "properties", "assets"],
       "properties": {
@@ -35,6 +36,7 @@
     },
     {
       "title": "STAC Collection",
+      "$comment": "This is the schema for STAC Collections.",
       "type": "object",
       "required": ["type"],
       "properties": {
@@ -72,10 +74,10 @@
       "properties": {
         "dgeo:cids": {
           "type": "array",
-          "description": "REQUIRED. Array of IPFS Content Identifiers (CIDs) associated with this Item or Collection. Each CID MUST be immutable; mutable pointers such as IPNS MUST NOT be included. This field is queryable via pgstac and STAC API CQL2 filters.",
+          "description": "REQUIRED. Array of Content Identifiers (CIDs) associated with this Item or Collection. Each CID MUST be immutable; mutable pointers such as IPNS MUST NOT be included. This field is queryable via pgstac and STAC API CQL2 filters.",
           "items": {
             "type": "string",
-            "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,})$"
+            "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$"
           },
           "minItems": 1,
           "uniqueItems": true
@@ -96,8 +98,13 @@
       "properties": {
         "dgeo:cid": {
           "type": "string",
-          "description": "OPTIONAL. The IPFS CID that this asset represents. When present, this CID MUST also appear in the Item's dgeo:cids array. This field enables programmatic correlation between queryable CIDs and specific assets, particularly when hrefs use HTTP gateway URLs that don't directly expose the CID.",
-          "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,})$"
+          "description": "OPTIONAL. The CID that this asset represents. When present, this CID MUST also appear in the Item's dgeo:cids array. This field enables programmatic correlation between queryable CIDs and specific assets, particularly when hrefs use HTTP gateway URLs that don't directly expose the CID.",
+          "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$"
+        },
+        "dgeo:piece_cid": {
+          "type": "string",
+          "description": "OPTIONAL. The Filecoin Piece CID (commP) that this asset is committed to. When present, this CID MUST also appear in the Item's dgeo:piece_cids array.",
+          "pattern": "^baga6ea[a-z2-7]{52,}$"
         },
         "dgeo:cid_profile": {
           "type": "object",
@@ -107,47 +114,63 @@
             "cid_version": {
               "type": "integer",
               "enum": [0, 1],
-              "description": "CID version (0 or 1). RECOMMENDED when cid_profile is present."
-            },
-            "multibase_encoding": {
-              "type": "string",
-              "description": "Multibase encoding of the CID string (e.g., base32, base58btc). OPTIONAL."
+              "description": "RECOMMENDED. Content Identifier (CID) version (0 or 1) specifying the format's structure and encoding."
             },
             "hash_function": {
               "type": "string",
-              "description": "RECOMMENDED. Multihash function used when constructing the CID (e.g., sha2-256, blake3)."
+              "description": "RECOMMENDED. Multihash function to use (e.g., \"sha2-256\")."
             },
-            "chunk_algorithm": {
+            "chunking_algorithm": {
               "type": "string",
-              "description": "RECOMMENDED. Algorithm used to split data (e.g., fixed, balanced, rabin)."
+              "description": "RECOMMENDED. Algorithm used to split files into chunks (e.g., \"fixed-size\", \"rabin\")."
             },
             "chunk_size": {
               "type": "integer",
-              "description": "Target size of chunks in bytes. OPTIONAL."
+              "description": "OPTIONAL. Maximum size of each chunk in bytes."
             },
             "dag_width": {
               "type": "integer",
-              "description": "Maximum number of links per block. OPTIONAL."
+              "description": "OPTIONAL. Maximum number of children per node in the DAG."
             },
             "dag_layout": {
               "type": "string",
-              "description": "RECOMMENDED. Layout algorithm (e.g., balanced, trickle, hamt-directory)."
+              "description": "RECOMMENDED. Layout of the DAG (e.g., \"balanced\", \"balanced-packed\", \"trickle\")."
             },
-            "directory_wrapping": {
+            "empty_directories": {
               "type": "boolean",
-              "description": "OPTIONAL. Wrap single files in directories to retain filename metadata."
+              "description": "OPTIONAL. Whether empty directories are included in the DAG."
             },
             "hamt_directory_fanout": {
-              "type": "integer",
-              "description": "OPTIONAL. Fanout for HAMT-sharded directories (default bitwidth is 8 == 256 leaves)."
+              "type": "string",
+              "description": "OPTIONAL. Maximum number of block entries per HAMT directory node (e.g. \"256 blocks\")."
             },
             "hamt_directory_threshold": {
-              "type": "integer",
-              "description": "OPTIONAL. Threshold size at which a regular directory transitions to HAMT-sharded representation."
-            },
-            "leaf_envelope": {
               "type": "string",
-              "description": "OPTIONAL. How leaf nodes are represented (raw or dag-pb), enabling validation of expected leaf node types."
+              "description": "OPTIONAL. The HAMTDirectory threshold determines when a directory converts to a HAMT structure based on its estimated size and is evaluated using `links-count` (child count), `links-bytes` (sum of link name and hash lengths), or `block-bytes` (full serialized node size)."
+            },
+            "hamt_switch_comparison": {
+              "type": "string",
+              "description": "OPTIONAL. Comparison operators (`>=` or `>`) for switching to a HAMT structure (e.g., \"size\", \"count\")."
+            },
+            "leaves": {
+              "type": "string",
+              "description": "OPTIONAL. Determines whether file data is stored in a dag-pb-wrapped block (with metadata) or as raw bytes (without metadata)."
+            },
+            "hidden_entities": {
+              "type": "boolean",
+              "description": "OPTIONAL. Whether hidden entities (including dot files) are included in the DAG."
+            },
+            "symlinks": {
+              "type": "string",
+              "description": "OPTIONAL. Method for handling symbolic links (e.g., 'preserve', 'followed', 'skipped')."
+            },
+            "mode_permissions": {
+              "type": "boolean",
+              "description": "OPTIONAL. POSIX file permissions included in the DAG."
+            },
+            "mod_time": {
+              "type": "boolean",
+              "description": "OPTIONAL. File modification time included in the DAG."
             }
           }
         }

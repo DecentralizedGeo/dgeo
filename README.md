@@ -88,8 +88,8 @@ This field is designed for **queryability** via pgstac and STAC API CQL2 filters
 
 **CID Format Validation:**
 
-- CIDv0: `^Qm[1-9A-HJ-NP-Za-km-z]{44}$`
-- CIDv1: `^b[a-z2-7]{58,}$`
+- CIDv0: `^Qm[1-9A-HJ-NP-Za-km-z]{44}$` A 46 characters starting with "Qm", base 58-encoded multihash
+- CIDv1: `^b[a-z2-7]{58,}$` base 32-encoded self-describing multiformat protocol
 
 **Constraints:**
 
@@ -165,14 +165,31 @@ This field solves the **CID-to-asset correlation problem**: after querying Items
 }
 ```
 
-**Lookup Pattern:**
+#### `dgeo:piece_cid` (Asset-Level)
 
-```python
-def find_asset_by_cid(item, target_cid):
-    for asset_key, asset in item['assets'].items():
-        if asset.get('dgeo:cid') == target_cid:
-            return asset_key, asset
-    return None, None
+**Type:** String  
+**OPTIONAL**
+
+The Filecoin Piece CID (commP) that this specific asset represents. When present, this CID **MUST** also appear in the Item's `dgeo:piece_cids` array at the properties level.
+
+This field solves the **Piece CID-to-asset correlation problem**: after querying Items by Piece CID, clients can programmatically identify which asset that Piece CID corresponds to, even when the asset `href` uses an HTTP gateway URL.
+
+**Example:**
+
+```json
+{
+  "properties": {
+    "dgeo:piece_cids": ["baga6ea4seaqao7s73y24kcutaosvacpdjgfe5pw76ooefnyqw4ynr3d2y6x2mpq"]
+  },
+  "assets": {
+    "red": {
+      "href": "https://gateway.pinata.cloud/ipfs/bafybeigdyrzt...",
+      "type": "image/tiff",
+      "dgeo:piece_cid": "baga6ea4seaqao7s73y24kcutaosvacpdjgfe5pw76ooefnyqw4ynr3d2y6x2mpq",
+      "dgeo:cid_profile": {...}
+    }
+  }
+}
 ```
 
 #### `dgeo:cid_profile` (Asset-Level)
@@ -184,177 +201,29 @@ Technical details about how the CID's DAG was generated (chunking, hashing, layo
 
 See the [CID Profile Object](#cid-profile-object) section for detailed field definitions.
 
-## Queryability
-
-The `dgeo` extension is designed for queryability via **pgstac** and **STAC API** implementations that support CQL2 filtering.
-
-### pgstac Compatibility
-
-Both `dgeo:cids` and `dgeo:piece_cids` are **scalar string arrays**, which work seamlessly with pgstac's `a_contains` operator and PostgreSQL's native JSONB array containment (`@>`) operator.
-
-**Example SQL Query:**
-
-```sql
--- Find all Items containing a specific CID
-SELECT * FROM pgstac.items 
-WHERE content->'properties'->'dgeo:cids' @> '["bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"]'::jsonb;
-```
-
-### CQL2 Query Examples
-
-**Search by CID:**
-
-```json
-{
-  "filter-lang": "cql2-json",
-  "filter": {
-    "op": "a_contains",
-    "args": [
-      {"property": "dgeo:cids"},
-      ["bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"]
-    ]
-  }
-}
-```
-
-**Search by Piece CID:**
-
-```json
-{
-  "filter-lang": "cql2-json",
-  "filter": {
-    "op": "a_contains",
-    "args": [
-      {"property": "dgeo:piece_cids"},
-      ["baga6ea4seaqao7s73y24kcutaosvacpdjgfe5pw76ooefnyqw4ynr3d2y6x2mpq"]
-    ]
-  }
-}
-```
-
-### STAC Browser UI Support
-
-Scalar array fields like `dgeo:cids` will appear in STAC Browser's filter dropdown menus, allowing users to interactively filter Items by CID values.
-
-## CID-to-Asset Correlation
-
-After querying Items by CID, clients often need to identify **which asset** that CID corresponds to. The `dgeo:cid` asset-level field enables this programmatic correlation.
-
-### Why This Matters
-
-Consider an Item with multiple assets:
-
-```json
-{
-  "properties": {
-    "dgeo:cids": ["bafybei111...", "bafybei222...", "bafybei333..."]
-  },
-  "assets": {
-    "red": {"href": "https://gateway.pinata.cloud/ipfs/bafybei111..."},
-    "nir": {"href": "https://example.com/nir.tif"},
-    "product_bundle": {"href": "ipfs://bafybei222..."}
-  }
-}
-```
-
-**Problem:** After querying for `bafybei111...`, how do you know it corresponds to the `red` asset?
-
-**Solution:** Add `dgeo:cid` to each asset:
-
-```json
-{
-  "properties": {
-    "dgeo:cids": ["bafybei111...", "bafybei222..."]
-  },
-  "assets": {
-    "red": {
-      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
-      "dgeo:cid": "bafybei111...",
-      "dgeo:cid_profile": {...}
-    },
-    "product_bundle": {
-      "href": "ipfs://bafybei222...",
-      "dgeo:cid": "bafybei222...",
-      "dgeo:cid_profile": {...}
-    }
-  }
-}
-```
-
-### Implementation Examples
-
-**Python:**
-
-```python
-from pystac_client import Client
-
-client = Client.open("https://example.com/stac")
-
-# Search by CID
-search = client.search(
-    filter={
-        "op": "a_contains",
-        "args": [{"property": "dgeo:cids"}, ["bafybei111..."]]
-    }
-)
-
-for item in search.items():
-    asset_key, asset = find_asset_by_cid(item, "bafybei111...")
-    if asset:
-        print(f"Found CID in asset '{asset_key}'")
-        print(f"  href: {asset['href']}")
-        print(f"  type: {asset['type']}")
-```
-
-**JavaScript:**
-
-```javascript
-function findAssetByCid(item, targetCid) {
-  for (const [assetKey, asset] of Object.entries(item.assets)) {
-    if (asset['dgeo:cid'] === targetCid) {
-      return { assetKey, asset };
-    }
-  }
-  return null;
-}
-
-const items = await fetch('/search', {
-  method: 'POST',
-  body: JSON.stringify({
-    filter: {
-      op: 'a_contains',
-      args: [{ property: 'dgeo:cids' }, ['bafybei111...']]
-    }
-  })
-}).then(r => r.json());
-
-items.features.forEach(item => {
-  const result = findAssetByCid(item, 'bafybei111...');
-  if (result) {
-    console.log(`Found CID in asset '${result.assetKey}'`);
-  }
-});
-```
-
 ## CID Profile Object
 
 The **CID Profile Object** describes the parameters that affect DAG and CID generation, conceptually aligned with UnixFS and IPIP-0499 UnixFS parameters. This allows independent systems to re-chunk or verify DAGs in a reproducible way.
 
-When `cid_profile` is present, the following fields are **RECOMMENDED**: `cid_version`, `chunk_algorithm`, `dag_layout`, and `hash_function`.
+When `cid_profile` is present, the following fields are **RECOMMENDED**: `cid_version`, `chunking_algorithm`, `dag_layout`, and `hash_function`.
 
 | Field Name | Type | Description |
 | --- | --- | --- |
-| `cid_version` | integer | CID version (`0` or `1`). RECOMMENDED when `cid_profile` is present. [Details](https://docs.ipfs.tech/concepts/content-addressing/#cid-versions) on encoding differences. |
-| `multibase_encoding` | string | OPTIONAL. Multibase encoding of the CID string (e.g., `base32`, `base58btc`). |
-| `hash_function` | string | RECOMMENDED. Multihash function used when constructing the CID (e.g., `sha2-256`, `blake3`). |
-| `chunk_algorithm` | string | RECOMMENDED. Algorithm used to split data (e.g., `fixed`, `balanced`, `rabin`). |
-| `chunk_size` | integer | OPTIONAL. Target size of chunks in bytes. |
-| `dag_width` | integer | OPTIONAL. Maximum number of links per block. |
-| `dag_layout` | string | RECOMMENDED. Layout algorithm (e.g., `balanced`, `trickle`, `hamt-directory`). |
-| `directory_wrapping` | boolean | OPTIONAL. Wrap single files in directories to retain filename metadata. |
-| `hamt_directory_fanout` | integer | OPTIONAL. Fanout for HAMT-sharded directories (default bitwidth is 8 == 256 leaves). |
-| `hamt_directory_threshold` | integer | OPTIONAL. Threshold size at which a regular directory transitions to HAMT-sharded representation. |
-| `leaf_envelope` | string | OPTIONAL. How leaf nodes are represented (`raw` or `dag-pb`), enabling validation of expected leaf node types. |
+| `cid_version` | integer | RECOMMENDED. Content Identifier (CID) version (0 or 1) specifying the format’s structure and encoding. |
+| `hash_function` | string | RECOMMENDED. Multihash function to use (e.g., "sha2-256"). |
+| `chunking_algorithm` | string | RECOMMENDED. Algorithm used to split files into chunks (e.g., "fixed-size", "rabin"). |
+| `chunk_size` | integer | OPTIONAL. Maximum size of each chunk in bytes. |
+| `dag_width` | integer | OPTIONAL. Maximum number of children per node in the DAG. |
+| `dag_layout` | string | RECOMMENDED. Layout of the DAG (e.g., "balanced", "balanced-packed", "trickle"). |
+| `empty_directories` | boolean | OPTIONAL. Whether empty directories are included in the DAG. |
+| `hamt_directory_fanout` | string | OPTIONAL. Maximum number of block entries per HAMT directory node (e.g. "256 blocks"). |
+| `hamt_directory_threshold` | string | OPTIONAL. The HAMTDirectory threshold determines when a directory converts to a HAMT structure. |
+| `hamt_switch_comparison` | string | OPTIONAL. Comparison operators (`>=` or `>`) for switching to a HAMT structure. |
+| `leaves` | string | OPTIONAL. Determines whether file data is stored in a dag-pb-wrapped block or as raw bytes. |
+| `hidden_entities` | boolean | OPTIONAL. Whether hidden entities (including dot files) are included in the DAG. |
+| `symlinks` | string | OPTIONAL. Method for handling symbolic links (e.g., "preserve", "followed", "skipped"). |
+| `mode_permissions` | boolean | OPTIONAL. POSIX file permissions included in the DAG. |
+| `mod_time` | boolean | OPTIONAL. File modification time included in the DAG. |
 
 JSON Schema for `cid_profile` uses `"additionalProperties": true` to allow other UnixFS/IPLD parameters in the future.
 
@@ -364,7 +233,7 @@ JSON Schema for `cid_profile` uses `"additionalProperties": true` to allow other
 {
   "dgeo:cid_profile": {
     "cid_version": 1,
-    "chunk_algorithm": "fixed",
+    "chunking_algorithm": "fixed-size",
     "chunk_size": 262144,
     "dag_layout": "balanced",
     "hash_function": "sha2-256"
@@ -372,235 +241,37 @@ JSON Schema for `cid_profile` uses `"additionalProperties": true` to allow other
 }
 ```
 
-## Usage Patterns
+## Implementation Guide
 
-### 1. Asset Mirroring
-
-In this pattern, core assets are mirrored on decentralized storage with CIDs tracked at the properties level and asset-level metadata.
-
-**Example:**
-
-```json
-{
-  "properties": {
-    "dgeo:cids": ["bafybei111...", "bafybei222..."]
-  },
-  "assets": {
-    "red": {
-      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
-      "type": "image/tiff",
-      "roles": ["data", "mirror"],
-      "dgeo:cid": "bafybei111...",
-      "dgeo:cid_profile": {
-        "cid_version": 1,
-        "chunk_algorithm": "fixed",
-        "chunk_size": 262144,
-        "dag_layout": "balanced",
-        "hash_function": "sha2-256"
-      }
-    },
-    "nir": {
-      "href": "https://gateway.pinata.cloud/ipfs/bafybei222...",
-      "type": "image/tiff",
-      "roles": ["data", "mirror"],
-      "dgeo:cid": "bafybei222...",
-      "dgeo:cid_profile": {
-        "cid_version": 1,
-        "chunk_algorithm": "fixed",
-        "chunk_size": 262144,
-        "dag_layout": "balanced",
-        "hash_function": "sha2-256"
-      }
-    }
-  }
-}
-```
-
-### 2. Multiple CID Representations
-
-When a single logical asset has multiple CID representations (different chunking, compression, or layout), create separate asset entries.
-
-**Example:**
-
-```json
-{
-  "properties": {
-    "dgeo:cids": ["bafybei111...", "QmLegacy..."]
-  },
-  "assets": {
-    "visual": {
-      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
-      "type": "image/tiff",
-      "roles": ["data", "primary"],
-      "description": "Primary CID v1 using fixed chunking",
-      "dgeo:cid": "bafybei111...",
-      "dgeo:cid_profile": {
-        "cid_version": 1,
-        "chunk_algorithm": "fixed",
-        "chunk_size": 262144
-      }
-    },
-    "visual-legacy": {
-      "href": "ipfs://QmLegacy...",
-      "type": "image/tiff",
-      "roles": ["data", "alternative"],
-      "description": "Legacy CID v0 for backward compatibility",
-      "dgeo:cid": "QmLegacy...",
-      "dgeo:cid_profile": {
-        "cid_version": 0,
-        "chunk_algorithm": "fixed",
-        "chunk_size": 262144
-      }
-    }
-  }
-}
-```
-
-### 3. Container Resources (CAR Files / Directories)
-
-A `dgeo` resource may represent a container that aggregates multiple assets, such as an IPFS directory or CAR file.
-
-**Example:**
-
-```json
-{
-  "properties": {
-    "dgeo:cids": ["bafybei111...", "bafybei222...", "bafybei333..."],
-    "dgeo:piece_cids": ["baga6ea..."]
-  },
-  "assets": {
-    "red": {
-      "href": "https://gateway.pinata.cloud/ipfs/bafybei111...",
-      "dgeo:cid": "bafybei111...",
-      "dgeo:cid_profile": {...}
-    },
-    "nir": {
-      "href": "https://gateway.pinata.cloud/ipfs/bafybei222...",
-      "dgeo:cid": "bafybei222...",
-      "dgeo:cid_profile": {...}
-    },
-    "product_bundle": {
-      "href": "ipfs://bafybei333...",
-      "type": "application/vnd.ipld.car",
-      "title": "Complete Product Bundle (CAR)",
-      "roles": ["archive"],
-      "description": "CAR archive containing all Level-2 product files",
-      "dgeo:cid": "bafybei333...",
-      "dgeo:cid_profile": {
-        "cid_version": 1,
-        "dag_layout": "hamt-directory",
-        "hash_function": "sha2-256",
-        "directory_wrapping": true,
-        "hamt_directory_fanout": 256,
-        "hamt_directory_threshold": 3
-      }
-    }
-  }
-}
-```
-
-## Migration from v1.0
-
-**⚠️ Breaking Changes:** Version 1.2 is a major breaking change from v1.0-wip2. Migration is required for existing implementations.
-
-### Key Changes
-
-| v1.0-wip2 | v1.2 | Notes |
-| --- | --- | --- |
-| `dgeo:assets[].cid` | `dgeo:cids[]` | Flattened to scalar array for queryability |
-| `dgeo:assets[].piece_cid` | `dgeo:piece_cids[]` | Flattened to scalar array for queryability |
-| `dgeo:assets[].cid_profile` | `assets[key].dgeo:cid_profile` | Moved to asset level |
-| `dgeo:assets[].roles` | `assets[key].roles` | Standard STAC asset roles |
-| `dgeo:assets[].description` | `assets[key].description` | Standard STAC asset description |
-| `dgeo:assets[].name` | Asset object key | Standard STAC pattern |
-| N/A | `assets[key].dgeo:cid` | **NEW:** Explicit CID-to-asset correlation |
-| `dgeo:context` | **REMOVED** | Not needed for MVP |
-
-### Conversion Example
-
-**v1.0-wip2:**
-
-```json
-{
-  "properties": {
-    "dgeo:assets": [
-      {
-        "name": "red",
-        "cid": "bafybei...",
-        "roles": ["mirror", "data"],
-        "description": "IPFS mirror of red band",
-        "cid_profile": {...}
-      }
-    ],
-    "dgeo:context": {...}
-  },
-  "assets": {
-    "red": {
-      "href": "https://example.com/red.tif",
-      "roles": ["data"]
-    }
-  }
-}
-```
-
-**v1.2:**
-
-```json
-{
-  "properties": {
-    "dgeo:cids": ["bafybei..."]
-  },
-  "assets": {
-    "red": {
-      "href": "https://gateway.pinata.cloud/ipfs/bafybei...",
-      "roles": ["data", "mirror"],
-      "description": "IPFS mirror of red band",
-      "dgeo:cid": "bafybei...",
-      "dgeo:cid_profile": {...}
-    }
-  }
-}
-```
-
-### Migration Checklist
-
-- [ ] Replace `dgeo:assets` array with `dgeo:cids` array
-- [ ] Extract all `piece_cid` values into `dgeo:piece_cids` array
-- [ ] Move `cid_profile` to asset-level `dgeo:cid_profile`
-- [ ] Merge `roles` and `description` into standard asset fields
-- [ ] Add `dgeo:cid` to each asset for correlation
-- [ ] Remove `dgeo:context` (store externally if needed)
-- [ ] Update schema validation to v1.2
-- [ ] Update pgstac queryable definitions
-- [ ] Update client code that reads `dgeo:assets`
-- [ ] Update ingest pipelines
-- [ ] Re-index existing Items in STAC API
-
-## Implementation Best Practices
-
-### Synchronization
-
-`dgeo:cids` and asset-level `dgeo:cid` fields **SHOULD** be generated programmatically at ingest/publish time from authoritative sources (storage backends, asset manifest) rather than edited manually.
-
-### Mutability
-
-Mutable pointers (e.g., IPNS) **MUST NOT** be included in `dgeo:cids`. All CIDs must be immutable to ensure reproducible queries and scientific integrity.
-
-### Indexing
-
-STAC APIs using pgstac **SHOULD** register `dgeo:cids` and `dgeo:piece_cids` as queryables to enable CQL2 filtering.
-
-### Asset Correlation
-
-When using HTTP gateway URLs for asset `href` values, always include `dgeo:cid` at the asset level to enable programmatic CID-to-asset correlation.
+For details on common **Usage Patterns** and best practices, please see the [Implementation Guide](./docs/implementation-guide.md).
 
 ## Contributing
 
-All contributions are subject to the [STAC Specification Code of Conduct](https://github.com/radiantearth/stac-spec/blob/master/CODE_OF_CONDUCT.md).
-
-For contributions, please follow the [STAC specification contributing guide](https://github.com/radiantearth/stac-spec/blob/master/CONTRIBUTING.md).
+All contributions are subject to the
+[STAC Specification Code of Conduct](https://github.com/radiantearth/stac-spec/blob/master/CODE_OF_CONDUCT.md).
+For contributions, please follow the
+[STAC specification contributing guide](https://github.com/radiantearth/stac-spec/blob/master/CONTRIBUTING.md) Instructions
+for running tests are copied here for convenience.
 
 ### Running tests
 
-1. `npm install`  
-2. `npm test`  
+The same checks that run as checks on PR's are part of the repository and can be run locally to verify that changes are valid. 
+To run tests locally, you'll need `npm`, which is a standard part of any [node.js installation](https://nodejs.org/en/download/).
+
+First you'll need to install everything with npm once. Just navigate to the root of this repository and on 
+your command line run:
+```bash
+npm install
+```
+
+Then to check markdown formatting and test the examples against the JSON schema, you can run:
+```bash
+npm test
+```
+
+This will spit out the same texts that you see online, and you can then go and fix your markdown or examples.
+
+If the tests reveal formatting problems with the examples, you can fix them with:
+```bash
+npm run format-examples
+```
