@@ -32,7 +32,7 @@
       "dgeo:cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
       "dgeo:cid_profile": {
         "cid_version": 1,
-        "chunking_algorithm": "fixed",
+        "chunking_algorithm": "fixed-size",
         "chunk_size": 262144,
         "dag_layout": "balanced",
         "hash_function": "sha2-256"
@@ -50,7 +50,7 @@
       "dgeo:cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
       "dgeo:cid_profile": {
         "cid_version": 0,
-        "chunking_algorithm": "fixed",
+        "chunking_algorithm": "fixed-size",
         "chunk_size": 262144,
         "hash_function": "sha2-256"
       }

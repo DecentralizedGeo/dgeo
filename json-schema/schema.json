@@ -98,12 +98,12 @@
       "properties": {
         "dgeo:cid": {
           "type": "string",
-          "description": "OPTIONAL. The CID that this asset represents. When present, this CID MUST also appear in the Item's dgeo:cids array. This field enables programmatic correlation between queryable CIDs and specific assets, particularly when hrefs use HTTP gateway URLs that don't directly expose the CID.",
+          "description": "OPTIONAL. The CID that this asset represents. When present, this CID MUST also appear in the parent Item or Collection's dgeo:cids array. This field enables programmatic correlation between queryable CIDs and specific assets, particularly when hrefs use HTTP gateway URLs that don't directly expose the CID.",
           "pattern": "^(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{58,})$"
         },
         "dgeo:piece_cid": {
           "type": "string",
-          "description": "OPTIONAL. The Filecoin Piece CID (commP) that this asset is committed to. When present, this CID MUST also appear in the Item's dgeo:piece_cids array.",
+          "description": "OPTIONAL. The Filecoin Piece CID (commP) that this asset is committed to. When present, this CID MUST also appear in the parent Item or Collection's dgeo:piece_cids array.",
           "pattern": "^baga6ea[a-z2-7]{52,}$"
         },
         "dgeo:cid_profile": {
@@ -150,7 +150,7 @@
             },
             "hamt_switch_comparison": {
               "type": "string",
-              "description": "OPTIONAL. Comparison operators (`>=` or `>`) for switching to a HAMT structure (e.g., \"size\", \"count\")."
+              "description": "OPTIONAL. Comparison operator used when evaluating HAMTDirectory thresholds for switching to a HAMT structure. Allowed values are \">=\" and \">\"."
             },
             "leaves": {
               "type": "string",

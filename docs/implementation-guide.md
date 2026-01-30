@@ -155,22 +155,23 @@ function findAssetByCid(item, targetCid) {
   return null;
 }
 
-const items = await fetch('/search', {
-  method: 'POST',
-  body: JSON.stringify({
-    filter: {
-      op: 'a_contains',
-      args: [{ property: 'dgeo:cids' }, ['bafybei111...']]
+(async () => {
+  const items = await fetch('/search', {
+    method: 'POST',
+    body: JSON.stringify({
+      filter: {
+        op: 'a_contains',
+        args: [{ property: 'dgeo:cids' }, ['bafybei111...']]
+      }
+    })
+  }).then(r => r.json());
+  items.features.forEach(item => {
+    const result = findAssetByCid(item, 'bafybei111...');
+    if (result) {
+      console.log(`Found CID in asset '${result.assetKey}'`);
     }
-  })
-}).then(r => r.json());
-
-items.features.forEach(item => {
-  const result = findAssetByCid(item, 'bafybei111...');
-  if (result) {
-    console.log(`Found CID in asset '${result.assetKey}'`);
-  }
-});
+  });
+})();
 ```
 
 ## Usage Patterns

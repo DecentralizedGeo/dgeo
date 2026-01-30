@@ -79,8 +79,8 @@ This field is designed for **queryability** via pgstac and STAC API CQL2 filters
 
 **CID Format Validation:**
 
-- CIDv0: `^Qm[1-9A-HJ-NP-Za-km-z]{44}$` A 46 characters starting with "Qm", base 58-encoded multihash
-- CIDv1: `^b[a-z2-7]{58,}$` base 32-encoded self-describing multiformat protocol
+- CIDv0: `^Qm[1-9A-HJ-NP-Za-km-z]{44}$` A 46-character string starting with "Qm", base58-encoded multihash
+- CIDv1: `^b[a-z2-7]{58,}$` base32-encoded self-describing multiformat protocol
 
 **Constraints:**
 
