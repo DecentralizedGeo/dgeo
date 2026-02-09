@@ -15,7 +15,8 @@ The **Decentralized Geospatial (dgeo)** extension provides a standard set of fie
 The primary objectives of this extension are:
 
 1. To enable **queryable CID-based discovery** through STAC API and pgstac, allowing users to search for Items by Content Identifier (CID).
-2. To provide **asset-level DAG metadata** that describes how content-addressed structures were generated, enabling reproducible verification and reconstruction.
+2. To provide **asset-level DAG metadata** that describes how content-addressed structures were generated, enabling reproducible verification and reconstruction. More information on common conventions for DAG creation can be found in [IPIP-499: UnixFS CID Profiles](https://bafybeif6uxug72kmxwqtyfvojuwfp5v4ug27b4zevgwisoupigut6x4exy.ipfs.inbrowser.link/ipips/ipip-0499/).
+
 3. To separate **discovery** (queryable CID arrays) from **access** (asset hrefs and descriptions), following STAC best practices.
 
 Unlike extensions that describe *how* to access a specific file, `dgeo` describes **what** decentralized resources exist in a queryable, pgstac-compatible format.
@@ -202,7 +203,7 @@ This field solves the **Piece CID-to-asset correlation problem**: after querying
 
 ## CID Profile Object
 
-The **CID Profile Object** describes the parameters that affect DAG and CID generation, conceptually aligned with UnixFS and IPIP-0499 UnixFS parameters. This allows independent systems to re-chunk or verify DAGs in a reproducible way.
+The **CID Profile Object** describes the parameters that affect DAG and CID generation, conceptually aligned with UnixFS and [IPIP-0499 UnixFS parameters](https://bafybeif6uxug72kmxwqtyfvojuwfp5v4ug27b4zevgwisoupigut6x4exy.ipfs.inbrowser.link/ipips/ipip-0499/). This allows independent systems to re-chunk or verify DAGs in a reproducible way.
 
 When `cid_profile` is present, the following fields are **RECOMMENDED**: `cid_version`, `chunking_algorithm`, `dag_layout`, and `hash_function`.
 
